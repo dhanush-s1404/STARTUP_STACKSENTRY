@@ -1,0 +1,18 @@
+{
+  "name": "stacksentry",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StackSentry Technologies — Monorepo",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "start": "npm run start --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend",
+    "typecheck": "npm run typecheck --workspace=frontend",
+    "backend:install": "cd backend && pip install -r requirements.txt",
+    "backend:dev": "cd backend && uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
+  }
+}

@@ -1,0 +1,10 @@
+export { IndustriesHero } from "./industries-hero";
+export { IndustryCard } from "./industry-card";
+export { IndustriesGrid } from "./industries-grid";
+export { IndustryDetailHero } from "./industry-detail-hero";
+export { IndustryDetailContent } from "./industry-detail-content";
+export { IndustryDigitalRoadmap } from "./industry-digital-roadmap";
+export { IndustryChallengeSolution } from "./industry-challenge-solution";
+export { IndustrySuccessMetrics } from "./industry-success-metrics";
+export { IndustrySolutionShowcase } from "./industry-solution-showcase";
+export { IndustryTechnologies } from "./industry-technologies";

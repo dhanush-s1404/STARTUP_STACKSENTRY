@@ -1,0 +1,19 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from database.config import get_db
+
+router = APIRouter(prefix="/api", tags=["health"])
+
+
+@router.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "stacksentry-api"}
+
+
+@router.get("/health/db")
+async def health_check_db(db: AsyncSession = Depends(get_db)):
+    try:
+        await db.execute("SELECT 1")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": str(e)}
