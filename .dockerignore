@@ -1,12 +1,21 @@
-# Dependencies
+# =============================================================================
+# StackSentry — Docker Context Exclusions
+# =============================================================================
+# Keeps build context small by excluding dev/unnecessary files
+# =============================================================================
+
+# Dependencies (installed inside container)
 node_modules/
+**/node_modules/
 __pycache__/
+**/__pycache__/
 *.pyc
 .venv/
 venv/
 
 # Build outputs
 .next/
+**/.next/
 out/
 build/
 dist/
@@ -30,7 +39,7 @@ Thumbs.db
 coverage/
 .vitest/
 
-# Docker
+# Docker volumes
 pgdata/
 redisdata/
 
@@ -41,3 +50,12 @@ logs/
 # Misc
 *.tsbuildinfo
 .vercel/
+.github/
+.git/
+.gitignore
+README.md
+docs/
+
+# Backend tests (not needed in production image)
+backend/tests/
+backend/migrations/

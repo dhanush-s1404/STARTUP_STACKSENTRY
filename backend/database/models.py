@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, String, Integer, Boolean, DateTime, Text,
+    Column, String, Integer, Boolean, DateTime, Date, Text,
     ForeignKey, Enum as SAEnum, Float,
 )
 from sqlalchemy.orm import relationship
