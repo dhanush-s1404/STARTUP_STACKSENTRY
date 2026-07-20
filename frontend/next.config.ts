@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
+import path from "path";
+
 const nextConfig: NextConfig = {
+turbopack: {
+  root: path.join(__dirname, ".."),
+},
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
@@ -55,15 +60,6 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/fonts/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/_next/static/(.*)",
         headers: [
           {
             key: "Cache-Control",
