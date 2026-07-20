@@ -3,22 +3,30 @@ git add .
 git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/dhanush-s1404/STARTUP_STACKSENTRY.git
-git push -u origin main
+git push -u origin main\
 
+when limit reset do this this is important
 
+My Next.js application now compiles successfully.
 
+Please perform a code audit and locate the exact files causing the following runtime warnings.
 
+Do NOT rewrite the project.
 
+Only identify and fix the affected files.
 
-What's ready:
-- Dockerfile.frontend — builds successfully (267 static pages generated)
-- Dockerfile.backend — builds successfully
-- docker-compose.yml — all 4 services configured
-- robots.ts — fixed for Next.js 16
-- Date import — fixed in backend/database/models.py
-- email-validator — added to backend/requirements.txt
-- package-lock.json — generated standalone for frontend
-When you come back, just run:
-docker compose up --build -d
-(Stop whatever is using ports 3000/5432/8000/6379 first)
-Go bro, see you later! ✌️
+Warnings:
+
+1. Functions are not valid as a React child.
+2. AnimatePresence mode="wait" has multiple direct children.
+3. Duplicate React keys (/blog).
+4. Scroll container requires a non-static position.
+5. middleware.ts should be migrated to proxy.ts.
+
+For each warning:
+
+• Show the file path.
+• Explain why it occurs.
+• Apply the smallest possible fix.
+• Do not change unrelated code.
+• Preserve the UI and animations.
