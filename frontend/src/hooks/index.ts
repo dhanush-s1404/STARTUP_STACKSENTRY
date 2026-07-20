@@ -3,19 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const [matches, setMatches] = useState<boolean | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
-    const listener = () => setMatches(media.matches);
+    setMatches(media.matches);
+
+    const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
     media.addEventListener("change", listener);
     return () => media.removeEventListener("change", listener);
-  }, [query, matches]);
+  }, [query]);
 
-  return matches;
+  return matches ?? false;
 }
 
 export function useMobile() {
@@ -36,12 +35,21 @@ export function useScrollPosition() {
 
   useEffect(() => {
     let lastScroll = 0;
+    let ticking = false;
+
     const handleScroll = () => {
-      const currentScroll = window.scrollY;
-      setScrollY(currentScroll);
-      setScrollDirection(currentScroll > lastScroll ? "down" : "up");
-      lastScroll = currentScroll;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const currentScroll = window.scrollY;
+          setScrollY(currentScroll);
+          setScrollDirection(currentScroll > lastScroll ? "down" : "up");
+          lastScroll = currentScroll;
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -66,7 +74,8 @@ export function useInView(options?: IntersectionObserverInit) {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [options]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return { ref, isInView };
 }
@@ -81,16 +90,20 @@ export function useAnimatedCounter(end: number, duration = 2000, startOnView = t
     hasAnimated.current = true;
 
     let startTime: number;
+    let rafId: number;
+
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.floor(eased * end));
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
       }
     };
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(rafId);
   }, [isInView, end, duration, startOnView]);
 
   return { count, ref };
@@ -100,8 +113,15 @@ export function useMousePosition() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    let ticking = false;
     const handler = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setPosition({ x: e.clientX, y: e.clientY });
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     window.addEventListener("mousemove", handler, { passive: true });
     return () => window.removeEventListener("mousemove", handler);
@@ -112,6 +132,7 @@ export function useMousePosition() {
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === "undefined") return initialValue;
     try {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
@@ -124,7 +145,11 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     (value: T | ((val: T) => T)) => {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      try {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      } catch {
+        // localStorage full or unavailable
+      }
     },
     [key, storedValue],
   );
@@ -185,8 +210,15 @@ export function useWindowSize() {
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
+    let ticking = false;
     const handleResize = () => {
-      setSize({ width: window.innerWidth, height: window.innerHeight });
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setSize({ width: window.innerWidth, height: window.innerHeight });
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -205,4 +237,18 @@ export function useLockedBody(locked = false) {
       document.body.style.overflow = originalOverflow;
     };
   }, [locked]);
+}
+
+export function useInterval(callback: () => void, delay: number | null) {
+  const savedCallback = useRef(callback);
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    if (delay === null) return;
+    const id = setInterval(() => savedCallback.current(), delay);
+    return () => clearInterval(id);
+  }, [delay]);
 }

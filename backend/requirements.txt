@@ -13,3 +13,6 @@ python-multipart>=0.0.18
 httpx>=0.28.0
 python-dotenv>=1.0.0
 gunicorn>=23.0.0
+
+# Production logging
+structlog>=24.0.0

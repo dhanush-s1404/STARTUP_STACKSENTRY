@@ -9,11 +9,15 @@ export function useApiQuery<T>(
   options?: {
     enabled?: boolean;
     refetchInterval?: number;
+    staleTime?: number;
+    gcTime?: number;
   },
 ) {
   return useQuery({
     queryKey: key,
     queryFn: () => api.get<T>(endpoint),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     ...options,
   });
 }
@@ -24,6 +28,7 @@ export function useApiMutation<TData, TVariables>(
   options?: {
     onSuccess?: (data: TData) => void;
     onError?: (error: Error) => void;
+    invalidateKeys?: string[] | (() => string[]);
   },
 ) {
   const queryClient = useQueryClient();
@@ -43,12 +48,19 @@ export function useApiMutation<TData, TVariables>(
     },
     onSuccess: (data) => {
       options?.onSuccess?.(data);
+
+      if (options?.invalidateKeys) {
+        const keys =
+          typeof options.invalidateKeys === "function"
+            ? options.invalidateKeys()
+            : options.invalidateKeys;
+        keys.forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: [key] });
+        });
+      }
     },
     onError: (error) => {
       options?.onError?.(error as Error);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries();
     },
   });
 }

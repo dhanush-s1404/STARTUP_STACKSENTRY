@@ -11,8 +11,13 @@
     "build": "npm run build --workspace=frontend",
     "start": "npm run start --workspace=frontend",
     "lint": "npm run lint --workspace=frontend",
+    "lint:fix": "npm run lint:fix --workspace=frontend",
     "typecheck": "npm run typecheck --workspace=frontend",
+    "format": "npm run format --workspace=frontend",
+    "test": "npm run test --workspace=frontend",
+    "test:coverage": "npm run test:coverage --workspace=frontend",
     "backend:install": "cd backend && pip install -r requirements.txt",
-    "backend:dev": "cd backend && uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
+    "backend:dev": "cd backend && uvicorn api.main:app --reload --host 0.0.0.0 --port 8000",
+    "backend:prod": "cd backend && gunicorn api.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000"
   }
 }
