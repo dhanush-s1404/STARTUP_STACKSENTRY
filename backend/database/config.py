@@ -7,7 +7,7 @@ import secrets
 
 class Settings(BaseSettings):
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/stacksentry",
+        default="postgresql+asyncpg://postgres:dhanushS1404*@db.ojaxobnfhqnjyiorfbuw.supabase.co:5432/postgres",
         description="Async PostgreSQL connection string",
     )
     REDIS_URL: str = Field(
