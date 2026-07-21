@@ -92,6 +92,27 @@ async def global_exception_handler(request: Request, exc: Exception):
         },
     )
 
+# ── Root & Ping ──────────────────────────────────────────────────────────────
+
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "status": "ok",
+        "message": "StackSentry Backend API is running 🚀",
+        "version": app.version,
+        "environment": settings.ENVIRONMENT,
+        "docs": "/api/docs" if not settings.is_production else None,
+        "health": "/api/health",
+    }
+
+
+@app.get("/ping", tags=["Root"])
+async def ping():
+    return {
+        "status": "ok",
+        "message": "pong"
+    }
+
 
 # ── Health ───────────────────────────────────────────────────────────────────
 app.include_router(health.router)
