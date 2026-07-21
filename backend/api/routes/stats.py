@@ -12,7 +12,7 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(CompanyStat)
         .where(CompanyStat.is_active == True)
-        .order_by(CompanyStat.sort_order)
+        .order_by(CompanyStat.order)
     )
     stats = result.scalars().all()
     return [

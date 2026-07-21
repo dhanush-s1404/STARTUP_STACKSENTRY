@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function proxy(_request: NextRequest) {
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const BACKEND_ORIGIN = BACKEND_URL.replace(/\/api\/?$/, "");
+
+export function middleware(_request: NextRequest) {
   const response = NextResponse.next();
 
   response.headers.set("X-DNS-Prefetch-Control", "on");
@@ -19,7 +22,7 @@ export function proxy(_request: NextRequest) {
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
       "media-src 'self'",
-      "connect-src 'self' http://localhost:8000",
+      `connect-src 'self' ${BACKEND_ORIGIN}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

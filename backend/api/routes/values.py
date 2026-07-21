@@ -12,7 +12,7 @@ async def list_values(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(CompanyValue)
         .where(CompanyValue.is_active == True)
-        .order_by(CompanyValue.sort_order)
+        .order_by(CompanyValue.order)
     )
     values = result.scalars().all()
     return [

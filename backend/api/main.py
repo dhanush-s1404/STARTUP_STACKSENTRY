@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import time
 import logging
 
-from database.config import settings
+from database.config import settings, create_tables
 from api.routes import (
     health, contact, newsletter, auth,
     services, solutions, industries, technologies, team,
@@ -31,6 +31,11 @@ logger = logging.getLogger("stacksentry.api")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting StackSentry API — environment=%s", settings.ENVIRONMENT)
+    try:
+        await create_tables()
+        logger.info("Database tables verified/created")
+    except Exception as e:
+        logger.error("Failed to create database tables: %s", e)
     yield
     logger.info("Shutting down StackSentry API")
 

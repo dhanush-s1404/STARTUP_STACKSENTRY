@@ -7,15 +7,15 @@ import secrets
 
 class Settings(BaseSettings):
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:dhanushS1404*@db.ojaxobnfhqnjyiorfbuw.supabase.co:5432/postgres",
-        description="Async PostgreSQL connection string",
+        default="",
+        description="Async PostgreSQL connection string — MUST be set via env var",
     )
     REDIS_URL: str = Field(
         default="redis://localhost:6379",
         description="Redis connection URL",
     )
     SECRET_KEY: str = Field(
-        default_factory=lambda: secrets.token_urlsafe(64),
+        default="",
         description="JWT signing secret — MUST be set in production",
     )
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -39,11 +39,20 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-if settings.is_production and settings.SECRET_KEY == "change-me-in-production":
-    raise RuntimeError(
-        "SECRET_KEY must be set to a secure value in production. "
-        "Set the SECRET_KEY environment variable."
-    )
+if settings.is_production:
+    if not settings.SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY must be set to a secure value in production. "
+            "Set the SECRET_KEY environment variable."
+        )
+    if not settings.DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL must be set in production. "
+            "Set the DATABASE_URL environment variable."
+        )
+
+if not settings.SECRET_KEY:
+    settings.SECRET_KEY = secrets.token_urlsafe(64)
 
 engine = create_async_engine(
     settings.DATABASE_URL,
@@ -58,6 +67,14 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 class Base(DeclarativeBase):
     pass
+
+
+async def create_tables():
+    """Create all tables if they don't exist (safe for production)."""
+    import database.models  # noqa: F401 — registers all model tables
+    import database.models_part9c  # noqa: F401 — registers part 9c model tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 async def get_db():

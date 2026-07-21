@@ -15,7 +15,7 @@ async def list_timeline(db: AsyncSession = Depends(get_db)):
         .order_by(
             CompanyTimeline.year,
             CompanyTimeline.month,
-            CompanyTimeline.sort_order,
+            CompanyTimeline.order,
         )
     )
 

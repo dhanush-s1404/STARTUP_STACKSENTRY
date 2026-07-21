@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/cn";
 import { MotionDiv } from "@/lib/motion";
+import { api } from "@/services/api";
 import { getRecommendations } from "./recommendation-engine";
 import { ProjectSummary } from "./project-summary";
 import { SuccessConfirmation } from "./success-confirmation";
@@ -40,6 +41,7 @@ export function ProjectDiscoveryWizard() {
   const [data, setData] = useState<WizardData>(INITIAL_WIZARD_DATA);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
   const update = useCallback(<K extends keyof WizardData>(key: K, value: WizardData[K]) => {
@@ -88,35 +90,46 @@ export function ProjectDiscoveryWizard() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await fetch("/api/consultation/project-discovery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company: data.company,
-          industry: data.industry,
-          team_size: data.teamSize,
-          country: data.country,
-          website: data.website,
-          project_type: data.projectType,
-          business_goals: data.businessGoals,
-          desired_features: data.desiredFeatures,
-          preferred_technologies: data.preferredTechnologies,
-          project_timeline: data.timeline,
-          budget_range: data.budgetRange,
-          additional_requirements: data.additionalRequirements,
-          contact_name: data.contactName,
-          contact_email: data.contactEmail,
-          contact_phone: data.contactPhone,
-        }),
+      await api.post("/consultation/project-discovery", {
+        company: data.company,
+        industry: data.industry,
+        team_size: data.teamSize,
+        country: data.country,
+        website: data.website,
+        project_type: data.projectType,
+        business_goals: data.businessGoals,
+        desired_features: data.desiredFeatures,
+        preferred_technologies: data.preferredTechnologies,
+        project_timeline: data.timeline,
+        budget_range: data.budgetRange,
+        additional_requirements: data.additionalRequirements,
+        contact_name: data.contactName,
+        contact_email: data.contactEmail,
+        contact_phone: data.contactPhone,
       });
       setSubmitted(true);
     } catch {
-      // Fallback: show success anyway for demo
-      setSubmitted(true);
+      setSubmitError(true);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (submitError) {
+    return (
+      <Section padding="lg">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-bold text-white">Submission Failed</h2>
+            <p className="mt-4 text-white/60">Something went wrong. Please try again or contact us directly.</p>
+            <button onClick={() => { setSubmitError(false); }} className="mt-6 rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white hover:bg-blue-600">
+              Try Again
+            </button>
+          </div>
+        </Container>
+      </Section>
+    );
+  }
 
   if (submitted) {
     return <SuccessConfirmation type="project" />;

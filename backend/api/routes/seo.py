@@ -21,8 +21,6 @@ async def get_seo_settings(page_path: str, db: AsyncSession = Depends(get_db)):
         "title": seo.title,
         "description": seo.description,
         "keywords": seo.keywords,
-        "og_title": seo.og_title,
-        "og_description": seo.og_description,
-        "og_image_url": seo.og_image_url,
+        "og_image": seo.og_image,
         "canonical_url": seo.canonical_url,
     }

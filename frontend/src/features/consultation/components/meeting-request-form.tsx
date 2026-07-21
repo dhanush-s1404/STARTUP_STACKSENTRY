@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/ui/fade-in";
 import { cn } from "@/lib/cn";
+import { api } from "@/services/api";
 import { SuccessConfirmation } from "./success-confirmation";
 
 const MEETING_TYPES = [
@@ -29,6 +30,7 @@ const TIME_SLOTS = [
 export function MeetingRequestForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [form, setForm] = useState({
     name: "", email: "", phone: "", company: "",
     date: "", time: "", timezone: "", meetingType: "video", notes: "",
@@ -41,15 +43,41 @@ export function MeetingRequestForm() {
     if (!form.name || !form.email) return;
     setSubmitting(true);
     try {
-      await fetch("/api/consultation/meeting-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      await api.post("/consultation/meeting-request", {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || undefined,
+        company: form.company || undefined,
+        preferred_date: form.date || undefined,
+        preferred_time: form.time || undefined,
+        timezone: form.timezone || undefined,
+        meeting_type: form.meetingType,
+        notes: form.notes || undefined,
       });
-    } catch { /* fallback */ }
+    } catch {
+      setSubmitError(true);
+      setSubmitting(false);
+      return;
+    }
     setSubmitting(false);
     setSubmitted(true);
   };
+
+  if (submitError) {
+    return (
+      <Section padding="lg">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-bold text-white">Submission Failed</h2>
+            <p className="mt-4 text-white/60">Something went wrong. Please try again or contact us directly.</p>
+            <button onClick={() => setSubmitError(false)} className="mt-6 rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white hover:bg-blue-600">
+              Try Again
+            </button>
+          </div>
+        </Container>
+      </Section>
+    );
+  }
 
   if (submitted) {
     return <SuccessConfirmation type="meeting" />;

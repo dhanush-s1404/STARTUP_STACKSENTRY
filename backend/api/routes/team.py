@@ -12,7 +12,7 @@ async def list_leadership(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(TeamMember)
         .where(TeamMember.is_active == True, TeamMember.is_leadership == True)
-        .order_by(TeamMember.sort_order)
+        .order_by(TeamMember.order)
     )
     members = result.scalars().all()
     return [
@@ -24,8 +24,7 @@ async def list_leadership(db: AsyncSession = Depends(get_db)):
             "department": m.department,
             "bio": m.bio,
             "avatar_url": m.avatar_url,
-            "linkedin_url": m.linkedin_url,
-            "twitter_url": m.twitter_url,
+            "social_links": m.social_links,
         }
         for m in members
     ]
@@ -36,7 +35,7 @@ async def list_team(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(TeamMember)
         .where(TeamMember.is_active == True)
-        .order_by(TeamMember.sort_order)
+        .order_by(TeamMember.order)
     )
     members = result.scalars().all()
     return [
@@ -48,8 +47,7 @@ async def list_team(db: AsyncSession = Depends(get_db)):
             "department": m.department,
             "bio": m.bio,
             "avatar_url": m.avatar_url,
-            "linkedin_url": m.linkedin_url,
-            "twitter_url": m.twitter_url,
+            "social_links": m.social_links,
             "is_leadership": m.is_leadership,
         }
         for m in members
@@ -70,7 +68,6 @@ async def get_team_member(slug: str, db: AsyncSession = Depends(get_db)):
         "department": member.department,
         "bio": member.bio,
         "avatar_url": member.avatar_url,
-        "linkedin_url": member.linkedin_url,
-        "twitter_url": member.twitter_url,
+        "social_links": member.social_links,
         "is_leadership": member.is_leadership,
     }

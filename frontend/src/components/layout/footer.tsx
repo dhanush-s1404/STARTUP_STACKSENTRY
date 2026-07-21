@@ -6,6 +6,7 @@ import { Container } from "@/components/ui/container";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { FOOTER_SECTIONS } from "@/constants";
 import { siteConfig } from "@/config/site";
+import { api } from "@/services/api";
 import {
   Github,
   Twitter,
@@ -36,17 +37,11 @@ export function Footer() {
     if (!email) return;
     setNewsletterStatus("loading");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/newsletter/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) throw new Error("Failed");
+      await api.post("/contact/newsletter", { email });
       setNewsletterStatus("success");
       setEmail("");
     } catch {
-      setNewsletterStatus("success");
-      setEmail("");
+      setNewsletterStatus("error");
     }
     setTimeout(() => setNewsletterStatus("idle"), 4000);
   };

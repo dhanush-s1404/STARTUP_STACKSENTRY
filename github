@@ -3,30 +3,5 @@ git add .
 git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/dhanush-s1404/STARTUP_STACKSENTRY.git
-git push -u origin main\
+git push -u origin main
 
-when limit reset do this this is important
-
-My Next.js application now compiles successfully.
-
-Please perform a code audit and locate the exact files causing the following runtime warnings.
-
-Do NOT rewrite the project.
-
-Only identify and fix the affected files.
-
-Warnings:
-
-1. Functions are not valid as a React child.
-2. AnimatePresence mode="wait" has multiple direct children.
-3. Duplicate React keys (/blog).
-4. Scroll container requires a non-static position.
-5. middleware.ts should be migrated to proxy.ts.
-
-For each warning:
-
-• Show the file path.
-• Explain why it occurs.
-• Apply the smallest possible fix.
-• Do not change unrelated code.
-• Preserve the UI and animations.

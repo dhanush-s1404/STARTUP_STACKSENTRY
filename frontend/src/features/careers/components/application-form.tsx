@@ -139,8 +139,8 @@ export function ApplicationForm({ jobSlug, jobTitle }: ApplicationFormProps) {
   const watchedCertifications = watch("certifications");
   const watchedLanguages = watch("languages");
 
-  const mutation = useApiMutation<{ success: boolean }, JobApplicationFormData>(
-    `/api/careers/applications/${jobSlug}`,
+  const mutation = useApiMutation<{ id: string }, Record<string, unknown>>(
+    "/job-applications",
     "POST",
     {
       onSuccess: () => {
@@ -195,9 +195,32 @@ export function ApplicationForm({ jobSlug, jobTitle }: ApplicationFormProps) {
 
   const onSubmit = useCallback(
     (data: JobApplicationFormData) => {
-      mutation.mutate(data);
+      mutation.mutate({
+        job_id: jobSlug,
+        full_name: data.fullName,
+        email: data.email,
+        phone: data.phone || undefined,
+        country: data.country || undefined,
+        city: data.city || undefined,
+        linkedin_url: data.linkedinUrl || undefined,
+        github_url: data.githubUrl || undefined,
+        portfolio_url: data.portfolioUrl || undefined,
+        resume_url: data.resumeUrl || undefined,
+        cover_letter: data.coverLetter || undefined,
+        years_of_experience: data.yearsOfExperience || undefined,
+        skills: data.skills?.length ? JSON.stringify(data.skills) : undefined,
+        expected_salary: data.expectedSalary || undefined,
+        current_salary: data.currentSalary || undefined,
+        notice_period: data.noticePeriod || undefined,
+        availability: data.availability || undefined,
+        education: data.education?.length ? JSON.stringify(data.education) : undefined,
+        certifications: data.certifications?.length ? JSON.stringify(data.certifications) : undefined,
+        projects: data.projects?.length ? JSON.stringify(data.projects) : undefined,
+        languages: data.languages?.length ? JSON.stringify(data.languages) : undefined,
+        agreement: !!data.agreement,
+      });
     },
-    [mutation],
+    [mutation, jobSlug],
   );
 
   const addSkill = useCallback(() => {

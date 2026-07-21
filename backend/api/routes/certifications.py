@@ -12,7 +12,7 @@ async def list_certifications(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Certification)
         .where(Certification.is_active == True)
-        .order_by(Certification.sort_order)
+        .order_by(Certification.order)
     )
     certs = result.scalars().all()
     return [
@@ -20,10 +20,10 @@ async def list_certifications(db: AsyncSession = Depends(get_db)):
             "id": c.id,
             "name": c.name,
             "issuer": c.issuer,
-            "date_obtained": c.date_obtained.isoformat() if c.date_obtained else None,
+            "issue_date": c.issue_date.isoformat() if c.issue_date else None,
             "expiry_date": c.expiry_date.isoformat() if c.expiry_date else None,
             "description": c.description,
-            "logo_url": c.logo_url,
+            "icon_url": c.icon_url,
         }
         for c in certs
     ]

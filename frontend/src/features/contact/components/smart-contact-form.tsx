@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { inquiryTypes } from "@/data/contact";
+import { api } from "@/services/api";
 
 type FormData = {
   name: string;
@@ -76,32 +77,30 @@ export function SmartContactForm() {
 
     setStatus("loading");
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          company: formData.company || undefined,
-          subject: `Contact: ${selectedInquiry?.label || "General"}`,
-          message: formData.message,
-          phone: formData.phone || undefined,
-          inquiry_type: formData.inquiryType,
-          preferred_contact: formData.preferredContact,
-          consent: formData.consent,
-        }),
+      const data = await api.post<{
+        status: string;
+        message: string;
+        detail?: string;
+      }>("/contact", {
+        name: formData.name,
+        email: formData.email,
+        company: formData.company || undefined,
+        subject: `Contact: ${selectedInquiry?.label || "General"}`,
+        message: formData.message,
+        phone: formData.phone || undefined,
+        inquiry_type: formData.inquiryType,
+        preferred_contact: formData.preferredContact,
+        consent: formData.consent,
       });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus("success");
-        setServerMessage(data.message);
-      } else {
-        setStatus("error");
-        setServerMessage(data.detail || "Something went wrong");
-      }
-    } catch {
+      setStatus("success");
+      setServerMessage(data.message);
+    } catch (err: unknown) {
       setStatus("error");
-      setServerMessage("Unable to submit form. Please try again.");
+      const message =
+        err instanceof Error && "data" in err
+          ? (err as { data?: { detail?: string } }).data?.detail || "Something went wrong"
+          : "Unable to submit form. Please try again.";
+      setServerMessage(message);
     }
   };
 

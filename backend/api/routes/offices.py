@@ -12,7 +12,7 @@ async def list_offices(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Office)
         .where(Office.is_active == True)
-        .order_by(Office.sort_order)
+        .order_by(Office.order)
     )
     offices = result.scalars().all()
     return [
@@ -21,9 +21,7 @@ async def list_offices(db: AsyncSession = Depends(get_db)):
             "city": o.city,
             "country": o.country,
             "address": o.address,
-            "phone": o.phone,
-            "email": o.email,
-            "is_headquarters": o.is_headquarters,
+            "is_hq": o.is_hq,
             "latitude": o.latitude,
             "longitude": o.longitude,
         }

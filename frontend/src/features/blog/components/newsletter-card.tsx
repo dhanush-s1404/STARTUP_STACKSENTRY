@@ -5,6 +5,7 @@ import { Mail, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { api } from "@/services/api";
 
 export function NewsletterCard() {
   const [email, setEmail] = useState("");
@@ -19,13 +20,11 @@ export function NewsletterCard() {
     }
     setStatus("loading");
     try {
-      const res = await fetch("/api/contact/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await api.post<{
+        status: string;
+        message: string;
+      }>("/contact/newsletter", { email });
+      if (data.status === "success" || data.status === "exists") {
         setStatus("success");
         setMessage("Thanks for subscribing!");
       } else {
