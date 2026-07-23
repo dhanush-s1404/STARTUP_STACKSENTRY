@@ -29,6 +29,7 @@ export function Carousel({
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [translateX, setTranslateX] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const total = children.length;
 
@@ -46,14 +47,48 @@ export function Carousel({
   const next = useCallback(() => goTo(currentIndex + 1), [goTo, currentIndex]);
   const prev = useCallback(() => goTo(currentIndex - 1), [goTo, currentIndex]);
 
-  // Auto play
+  // Auto play — pause on hover/focus
   useEffect(() => {
-    if (!autoPlay) return;
+    if (!autoPlay || isPaused) return;
     const timer = setInterval(next, interval);
     return () => clearInterval(timer);
-  }, [autoPlay, interval, next]);
+  }, [autoPlay, interval, next, isPaused]);
 
-  // Drag handling
+  // Keyboard navigation
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); next(); }
+    };
+    el.addEventListener("keydown", handleKeyDown);
+    return () => el.removeEventListener("keydown", handleKeyDown);
+  }, [next, prev]);
+
+  // Touch/swipe handling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const diff = e.touches[0].clientX - startX;
+    setTranslateX(diff);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (Math.abs(translateX) > 50) {
+      if (translateX > 0) prev();
+      else next();
+    }
+    setTranslateX(0);
+  };
+
+  // Mouse drag handling
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setStartX(e.clientX);
@@ -76,14 +111,26 @@ export function Carousel({
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div
+      className={cn("relative", className)}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+    >
       <div
         ref={containerRef}
         className="overflow-hidden rounded-2xl"
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carousel"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div
           className="flex transition-transform duration-500 ease-out"
@@ -95,6 +142,9 @@ export function Carousel({
             <div
               key={index}
               className={cn("w-full shrink-0", itemClassName)}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`Slide ${index + 1} of ${total}`}
             >
               {child}
             </div>
@@ -136,6 +186,7 @@ export function Carousel({
                   : "h-2 w-2 bg-white/20 hover:bg-white/40",
               )}
               aria-label={`Go to slide ${i + 1}`}
+              aria-current={i === currentIndex ? "true" : undefined}
             />
           ))}
         </div>

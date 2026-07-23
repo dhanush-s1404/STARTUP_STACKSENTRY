@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from slowapi import Limiter
@@ -7,6 +8,12 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import time
 import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
 
 from database.config import settings, create_tables
 from api.routes import (
@@ -56,6 +63,8 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -70,6 +79,13 @@ app.add_middleware(
 async def add_request_timing(request: Request, call_next):
     start_time = time.time()
     request_id = request.headers.get("X-Request-Id", "")
+    if request.method in ("POST", "PUT", "PATCH"):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 10 * 1024 * 1024:
+            return JSONResponse(
+                status_code=413,
+                content={"status": "error", "message": "Request body too large (max 10MB)"},
+            )
     response = await call_next(request)
     duration = time.time() - start_time
     response.headers["X-Response-Time"] = f"{duration:.4f}s"

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, case, literal_column
 from database.config import get_db
 from database.models import Job
+from api.utils import escape_like
 
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
@@ -52,12 +53,12 @@ async def search_jobs(
     page_size: int = Query(12, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    like_pattern = f"%{q}%"
+    like_pattern = f"%{escape_like(q)}%"
     relevance = (
         case(
-            (Job.title.ilike(like_pattern), 10),
-            (Job.description.ilike(like_pattern), 7),
-            (Job.preferred_skills.ilike(like_pattern), 5),
+            (Job.title.ilike(like_pattern, escape="\\"), 10),
+            (Job.description.ilike(like_pattern, escape="\\"), 7),
+            (Job.preferred_skills.ilike(like_pattern, escape="\\"), 5),
             else_=1,
         )
     ).label("relevance")
@@ -68,9 +69,9 @@ async def search_jobs(
             Job.is_active == True,
             Job.deleted_at.is_(None),
             (
-                Job.title.ilike(like_pattern)
-                | Job.description.ilike(like_pattern)
-                | Job.preferred_skills.ilike(like_pattern)
+                Job.title.ilike(like_pattern, escape="\\")
+                | Job.description.ilike(like_pattern, escape="\\")
+                | Job.preferred_skills.ilike(like_pattern, escape="\\")
             ),
         )
         .order_by(literal_column("relevance").desc(), Job.order)
@@ -154,7 +155,7 @@ async def list_jobs(
     if featured is not None:
         conditions.append(Job.is_featured == featured)
     if search:
-        conditions.append(Job.title.ilike(f"%{search}%"))
+        conditions.append(Job.title.ilike(f"%{escape_like(search)}%", escape="\\"))
 
     count_result = await db.execute(
         select(func.count()).select_from(Job).where(and_(*conditions))

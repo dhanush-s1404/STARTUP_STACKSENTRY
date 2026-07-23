@@ -190,7 +190,6 @@ async def admin_create_roi_template(data: dict, db: AsyncSession = Depends(get_d
         created_by=str(admin.id),
     )
     db.add(t)
-    await db.commit()
     await db.refresh(t)
     _log(db, "roi_templates", t.id, "CREATE", new={"slug": t.slug, "title": t.title})
     await db.commit()
@@ -211,7 +210,6 @@ async def admin_update_roi_template(slug: str, data: dict, db: AsyncSession = De
         if jf in data:
             setattr(t, jf, json.dumps(data[jf]))
     t.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "roi_templates", t.id, "UPDATE", old=old, new={"slug": t.slug, "title": t.title})
     await db.commit()
     return {"id": t.id, "slug": t.slug, "title": t.title}
@@ -226,7 +224,6 @@ async def admin_delete_roi_template(slug: str, db: AsyncSession = Depends(get_db
     t.deleted_at = func.now()
     t.is_active = False
     t.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "roi_templates", t.id, "DELETE", old={"slug": t.slug, "title": t.title})
     await db.commit()
     return {"detail": "ROITemplate deleted"}
@@ -286,7 +283,6 @@ async def admin_update_consultation(record_id: str, data: dict, db: AsyncSession
     for field in ("status", "notes", "assigned_to"):
         if field in data:
             setattr(c, field, data[field])
-    await db.commit()
     _log(db, "consultation_requests", c.id, "UPDATE", old=old, new={"status": c.status, "assigned_to": c.assigned_to})
     await db.commit()
     return {"id": c.id, "status": c.status, "assigned_to": c.assigned_to}
@@ -300,7 +296,6 @@ async def admin_delete_consultation(record_id: str, db: AsyncSession = Depends(g
         raise HTTPException(status_code=404, detail="ConsultationRequest not found")
     c.deleted_at = func.now()
     c.status = "archived"
-    await db.commit()
     _log(db, "consultation_requests", c.id, "DELETE", old={"id": c.id, "company_name": c.company_name})
     await db.commit()
     return {"detail": "ConsultationRequest archived"}
@@ -361,7 +356,6 @@ async def admin_create_architecture(data: dict, db: AsyncSession = Depends(get_d
         created_by=str(admin.id),
     )
     db.add(m)
-    await db.commit()
     await db.refresh(m)
     _log(db, "architecture_models", m.id, "CREATE", new={"slug": m.slug, "title": m.title})
     await db.commit()
@@ -382,7 +376,6 @@ async def admin_update_architecture(slug: str, data: dict, db: AsyncSession = De
         if jf in data:
             setattr(m, jf, json.dumps(data[jf]))
     m.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "architecture_models", m.id, "UPDATE", old=old, new={"slug": m.slug, "title": m.title})
     await db.commit()
     return {"id": m.id, "slug": m.slug, "title": m.title}
@@ -397,7 +390,6 @@ async def admin_delete_architecture(slug: str, db: AsyncSession = Depends(get_db
     m.deleted_at = func.now()
     m.is_active = False
     m.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "architecture_models", m.id, "DELETE", old={"slug": m.slug, "title": m.title})
     await db.commit()
     return {"detail": "ArchitectureModel deleted"}
@@ -454,7 +446,6 @@ async def admin_create_coverage(data: dict, db: AsyncSession = Depends(get_db), 
         created_by=str(admin.id),
     )
     db.add(c)
-    await db.commit()
     await db.refresh(c)
     _log(db, "world_coverage", c.id, "CREATE", new={"country": c.country, "code": c.code})
     await db.commit()
@@ -472,7 +463,6 @@ async def admin_update_coverage(record_id: str, data: dict, db: AsyncSession = D
         if field in data:
             setattr(c, field, data[field])
     c.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "world_coverage", c.id, "UPDATE", old=old, new={"country": c.country})
     await db.commit()
     return {"id": c.id, "country": c.country}
@@ -487,7 +477,6 @@ async def admin_delete_coverage(record_id: str, db: AsyncSession = Depends(get_d
     c.deleted_at = func.now()
     c.is_active = False
     c.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "world_coverage", c.id, "DELETE", old={"country": c.country})
     await db.commit()
     return {"detail": "WorldCoverage deleted"}
@@ -545,7 +534,6 @@ async def admin_create_metric(data: dict, db: AsyncSession = Depends(get_db), ad
         created_by=str(admin.id),
     )
     db.add(m)
-    await db.commit()
     await db.refresh(m)
     _log(db, "business_metrics", m.id, "CREATE", new={"slug": m.slug, "label": m.label})
     await db.commit()
@@ -563,7 +551,6 @@ async def admin_update_metric(slug: str, data: dict, db: AsyncSession = Depends(
         if field in data:
             setattr(m, field, data[field])
     m.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "business_metrics", m.id, "UPDATE", old=old, new={"slug": m.slug, "label": m.label})
     await db.commit()
     return {"id": m.id, "slug": m.slug, "label": m.label}
@@ -578,7 +565,6 @@ async def admin_delete_metric(slug: str, db: AsyncSession = Depends(get_db), adm
     m.deleted_at = func.now()
     m.is_active = False
     m.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "business_metrics", m.id, "DELETE", old={"slug": m.slug, "label": m.label})
     await db.commit()
     return {"detail": "BusinessMetric deleted"}

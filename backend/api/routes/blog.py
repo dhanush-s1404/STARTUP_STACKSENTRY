@@ -1,10 +1,11 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, update
 from sqlalchemy.orm import joinedload
 from database.config import get_db
-from database.models import BlogPost, TeamMember
+from database.models import BlogPost
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/blog", tags=["Blog"])
 
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/api/blog", tags=["Blog"])
 async def list_blog_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(BlogPost.category)
-        .where(BlogPost.status == "published", BlogPost.category.isnot(None))
+        .where(BlogPost.status == "published", BlogPost.category.isnot(None), BlogPost.deleted_at.is_(None))
         .distinct()
     )
     categories = [row[0] for row in result.all()]
@@ -24,13 +25,12 @@ async def list_blog_categories(db: AsyncSession = Depends(get_db)):
 async def list_blog_tags(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(BlogPost.tags)
-        .where(BlogPost.status == "published", BlogPost.tags.isnot(None))
+        .where(BlogPost.status == "published", BlogPost.tags.isnot(None), BlogPost.deleted_at.is_(None))
     )
     tag_set: set[str] = set()
     for row in result.all():
         tags = row[0]
         if tags:
-            import json
             try:
                 parsed = json.loads(tags) if isinstance(tags, str) else tags
                 if isinstance(parsed, list):
@@ -54,20 +54,20 @@ async def list_blog_posts(
     query = (
         select(BlogPost)
         .options(joinedload(BlogPost.author))
-        .where(BlogPost.status == "published")
+        .where(BlogPost.status == "published", BlogPost.deleted_at.is_(None))
     )
 
     if category:
         query = query.where(BlogPost.category == category)
     if tag:
-        query = query.where(BlogPost.tags.like(f'%{tag}%'))
+        query = query.where(BlogPost.tags.like(f'%{escape_like(tag)}%', escape="\\"))
     if featured is not None:
         query = query.where(BlogPost.is_featured == featured)
     if search:
         search_filter = or_(
-            BlogPost.title.ilike(f'%{search}%'),
-            BlogPost.excerpt.ilike(f'%{search}%'),
-            BlogPost.content.ilike(f'%{search}%'),
+            BlogPost.title.ilike(f'%{escape_like(search)}%', escape="\\"),
+            BlogPost.excerpt.ilike(f'%{escape_like(search)}%', escape="\\"),
+            BlogPost.content.ilike(f'%{escape_like(search)}%', escape="\\"),
         )
         query = query.where(search_filter)
 
@@ -95,7 +95,7 @@ async def get_featured_posts(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(BlogPost)
         .options(joinedload(BlogPost.author))
-        .where(BlogPost.status == "published", BlogPost.is_featured == True)
+        .where(BlogPost.status == "published", BlogPost.is_featured == True, BlogPost.deleted_at.is_(None))
         .order_by(BlogPost.published_at.desc())
         .limit(3)
     )
@@ -108,7 +108,7 @@ async def get_popular_posts(limit: int = Query(5, ge=1), db: AsyncSession = Depe
     result = await db.execute(
         select(BlogPost)
         .options(joinedload(BlogPost.author))
-        .where(BlogPost.status == "published")
+        .where(BlogPost.status == "published", BlogPost.deleted_at.is_(None))
         .order_by(BlogPost.view_count.desc())
         .limit(limit)
     )
@@ -119,23 +119,38 @@ async def get_popular_posts(limit: int = Query(5, ge=1), db: AsyncSession = Depe
 @router.get("/related/{slug}")
 async def get_related_posts(slug: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(BlogPost).options(joinedload(BlogPost.author)).where(BlogPost.slug == slug)
+        select(BlogPost).options(joinedload(BlogPost.author)).where(BlogPost.slug == slug, BlogPost.deleted_at.is_(None))
     )
     post = result.unique().scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Blog post not found")
 
+    tag_conditions = []
+    if post.tags:
+        try:
+            parsed = json.loads(post.tags) if isinstance(post.tags, str) else post.tags
+            if isinstance(parsed, list):
+                for t in parsed:
+                    tag_conditions.append(BlogPost.tags.ilike(f"%{str(t).strip()}%"))
+        except (json.JSONDecodeError, TypeError):
+            first_tag = post.tags.split(",")[0].strip() if "," in post.tags else post.tags.strip()
+            if first_tag:
+                tag_conditions.append(BlogPost.tags.ilike(f"%{first_tag}%"))
+
+    related_conditions = [
+        BlogPost.status == "published",
+        BlogPost.deleted_at.is_(None),
+        BlogPost.slug != slug,
+    ]
+    if post.category:
+        related_conditions.append(BlogPost.category == post.category)
+    if tag_conditions:
+        related_conditions.append(or_(*tag_conditions))
+
     related = await db.execute(
         select(BlogPost)
         .options(joinedload(BlogPost.author))
-        .where(
-            BlogPost.status == "published",
-            BlogPost.slug != slug,
-            or_(
-                BlogPost.category == post.category,
-                BlogPost.tags.like(f'%{post.tags.split(",")[0].strip() if post.tags else ""}%'),
-            ),
-        )
+        .where(*related_conditions)
         .order_by(BlogPost.published_at.desc())
         .limit(3)
     )
@@ -147,7 +162,7 @@ async def get_blog_post(slug: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(BlogPost)
         .options(joinedload(BlogPost.author))
-        .where(BlogPost.slug == slug)
+        .where(BlogPost.slug == slug, BlogPost.deleted_at.is_(None))
     )
     post = result.unique().scalar_one_or_none()
     if not post:

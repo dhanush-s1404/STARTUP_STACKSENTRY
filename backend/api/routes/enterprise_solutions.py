@@ -10,6 +10,7 @@ from database.models import (
     ConsultationRequest as ConsultationRequestDB,
     ArchitectureModel, WorldCoverage, BusinessMetric,
 )
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/enterprise", tags=["Enterprise Solutions"])
 
@@ -74,8 +75,8 @@ async def list_solutions(
     if search:
         stmt = stmt.where(
             or_(
-                Solution.title.ilike(f"%{search}%"),
-                Solution.description.ilike(f"%{search}%"),
+                Solution.title.ilike(f"%{escape_like(search)}%", escape="\\"),
+                Solution.description.ilike(f"%{escape_like(search)}%", escape="\\"),
             )
         )
     if status:
@@ -189,8 +190,8 @@ async def list_industries(
     if search:
         stmt = stmt.where(
             or_(
-                Industry.title.ilike(f"%{search}%"),
-                Industry.description.ilike(f"%{search}%"),
+                Industry.title.ilike(f"%{escape_like(search)}%", escape="\\"),
+                Industry.description.ilike(f"%{escape_like(search)}%", escape="\\"),
             )
         )
     stmt = stmt.order_by(Industry.order)
@@ -256,8 +257,8 @@ async def list_challenges(
     if search:
         stmt = stmt.where(
             or_(
-                BusinessChallenge.title.ilike(f"%{search}%"),
-                BusinessChallenge.description.ilike(f"%{search}%"),
+                BusinessChallenge.title.ilike(f"%{escape_like(search)}%", escape="\\"),
+                BusinessChallenge.description.ilike(f"%{escape_like(search)}%", escape="\\"),
             )
         )
     if category:

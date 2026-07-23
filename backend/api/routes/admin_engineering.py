@@ -73,7 +73,6 @@ async def admin_create_principle(data: dict, db: AsyncSession = Depends(get_db),
         created_by=str(admin.id),
     )
     db.add(p)
-    await db.commit()
     await db.refresh(p)
     _log(db, "engineering_principles", p.id, "CREATE", new={"slug": p.slug, "title": p.title})
     await db.commit()
@@ -112,7 +111,6 @@ async def admin_update_principle(id: str, data: dict, db: AsyncSession = Depends
         if jf in data:
             setattr(p, jf, json.dumps(data[jf]))
     p.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "engineering_principles", p.id, "UPDATE", old=old, new={"slug": p.slug, "title": p.title})
     await db.commit()
     return {"id": p.id, "slug": p.slug, "title": p.title}
@@ -127,7 +125,6 @@ async def admin_delete_principle(id: str, db: AsyncSession = Depends(get_db), ad
     p.deleted_at = func.now()
     p.is_active = False
     p.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "engineering_principles", p.id, "DELETE", old={"slug": p.slug, "title": p.title})
     await db.commit()
     return {"detail": "EngineeringPrinciple deleted"}
@@ -172,7 +169,6 @@ async def admin_create_security_topic(data: dict, db: AsyncSession = Depends(get
         created_by=str(admin.id),
     )
     db.add(t)
-    await db.commit()
     await db.refresh(t)
     _log(db, "security_topics", t.id, "CREATE", new={"slug": t.slug, "title": t.title})
     await db.commit()
@@ -210,7 +206,6 @@ async def admin_update_security_topic(id: str, data: dict, db: AsyncSession = De
         if jf in data:
             setattr(t, jf, json.dumps(data[jf]))
     t.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "security_topics", t.id, "UPDATE", old=old, new={"slug": t.slug, "title": t.title})
     await db.commit()
     return {"id": t.id, "slug": t.slug, "title": t.title}
@@ -225,7 +220,6 @@ async def admin_delete_security_topic(id: str, db: AsyncSession = Depends(get_db
     t.deleted_at = func.now()
     t.is_active = False
     t.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "security_topics", t.id, "DELETE", old={"slug": t.slug, "title": t.title})
     await db.commit()
     return {"detail": "SecurityTopic deleted"}
@@ -286,7 +280,6 @@ async def admin_create_knowledge_article(data: dict, db: AsyncSession = Depends(
         created_by=str(admin.id),
     )
     db.add(a)
-    await db.commit()
     await db.refresh(a)
     _log(db, "knowledge_articles", a.id, "CREATE", new={"slug": a.slug, "title": a.title})
     await db.commit()
@@ -325,7 +318,6 @@ async def admin_update_knowledge_article(id: str, data: dict, db: AsyncSession =
         if jf in data:
             setattr(a, jf, json.dumps(data[jf]))
     a.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "knowledge_articles", a.id, "UPDATE", old=old, new={"slug": a.slug, "title": a.title})
     await db.commit()
     return {"id": a.id, "slug": a.slug, "title": a.title}
@@ -340,7 +332,6 @@ async def admin_delete_knowledge_article(id: str, db: AsyncSession = Depends(get
     a.deleted_at = func.now()
     a.is_active = False
     a.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "knowledge_articles", a.id, "DELETE", old={"slug": a.slug, "title": a.title})
     await db.commit()
     return {"detail": "KnowledgeArticle deleted"}
@@ -387,7 +378,6 @@ async def admin_create_performance_topic(data: dict, db: AsyncSession = Depends(
         created_by=str(admin.id),
     )
     db.add(t)
-    await db.commit()
     await db.refresh(t)
     _log(db, "performance_topics", t.id, "CREATE", new={"slug": t.slug, "title": t.title})
     await db.commit()
@@ -426,7 +416,6 @@ async def admin_update_performance_topic(id: str, data: dict, db: AsyncSession =
         if jf in data:
             setattr(t, jf, json.dumps(data[jf]))
     t.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "performance_topics", t.id, "UPDATE", old=old, new={"slug": t.slug, "title": t.title})
     await db.commit()
     return {"id": t.id, "slug": t.slug, "title": t.title}
@@ -441,7 +430,6 @@ async def admin_delete_performance_topic(id: str, db: AsyncSession = Depends(get
     t.deleted_at = func.now()
     t.is_active = False
     t.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "performance_topics", t.id, "DELETE", old={"slug": t.slug, "title": t.title})
     await db.commit()
     return {"detail": "PerformanceTopic deleted"}
@@ -493,7 +481,6 @@ async def admin_create_architecture_layer(data: dict, db: AsyncSession = Depends
         created_by=str(admin.id),
     )
     db.add(l)
-    await db.commit()
     await db.refresh(l)
     _log(db, "architecture_layers", l.id, "CREATE", new={"slug": l.slug, "title": l.title})
     await db.commit()
@@ -535,7 +522,6 @@ async def admin_update_architecture_layer(id: str, data: dict, db: AsyncSession 
         if jf in data:
             setattr(l, jf, json.dumps(data[jf]))
     l.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "architecture_layers", l.id, "UPDATE", old=old, new={"slug": l.slug, "title": l.title})
     await db.commit()
     return {"id": l.id, "slug": l.slug, "title": l.title}
@@ -550,7 +536,6 @@ async def admin_delete_architecture_layer(id: str, db: AsyncSession = Depends(ge
     l.deleted_at = func.now()
     l.is_active = False
     l.updated_by = str(admin.id)
-    await db.commit()
     _log(db, "architecture_layers", l.id, "DELETE", old={"slug": l.slug, "title": l.title})
     await db.commit()
     return {"detail": "ArchitectureLayer deleted"}

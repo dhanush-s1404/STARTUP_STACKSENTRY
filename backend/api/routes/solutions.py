@@ -5,8 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from database.config import get_db
 from database.models import Solution
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/solutions", tags=["Solutions"])
+
+
+def _json_load(val):
+    if not val:
+        return []
+    try:
+        return json.loads(val)
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 @router.get("")
@@ -14,12 +24,12 @@ async def list_solutions(
     search: Optional[str] = Query(None, description="Search by title or description"),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Solution).where(Solution.is_active == True)
+    stmt = select(Solution).where(Solution.is_active == True, Solution.deleted_at.is_(None))
     if search:
         stmt = stmt.where(
             or_(
-                Solution.title.ilike(f"%{search}%"),
-                Solution.description.ilike(f"%{search}%"),
+                Solution.title.ilike(f"%{escape_like(search)}%", escape="\\"),
+                Solution.description.ilike(f"%{escape_like(search)}%", escape="\\"),
             )
         )
     stmt = stmt.order_by(Solution.order)
@@ -33,7 +43,7 @@ async def list_solutions(
             "description": s.description,
             "short_description": s.short_description,
             "icon": s.icon,
-            "features": json.loads(s.key_features) if s.key_features else [],
+            "features": _json_load(s.key_features),
         }
         for s in solutions
     ]
@@ -41,7 +51,7 @@ async def list_solutions(
 
 @router.get("/{slug}")
 async def get_solution(slug: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Solution).where(Solution.slug == slug))
+    result = await db.execute(select(Solution).where(Solution.slug == slug, Solution.deleted_at.is_(None)))
     solution = result.scalar_one_or_none()
     if not solution:
         raise HTTPException(status_code=404, detail="Solution not found")
@@ -52,10 +62,10 @@ async def get_solution(slug: str, db: AsyncSession = Depends(get_db)):
         "description": solution.description,
         "short_description": solution.short_description,
         "icon": solution.icon,
-        "business_problems": json.loads(solution.business_problems) if solution.business_problems else [],
-        "key_features": json.loads(solution.key_features) if solution.key_features else [],
-        "business_benefits": json.loads(solution.business_benefits) if solution.business_benefits else [],
-        "technologies": json.loads(solution.technologies) if solution.technologies else [],
+        "business_problems": _json_load(solution.business_problems),
+        "key_features": _json_load(solution.key_features),
+        "business_benefits": _json_load(solution.business_benefits),
+        "technologies": _json_load(solution.technologies),
         "pricing_tier": solution.pricing_tier,
         "status": solution.status,
         "seo_title": solution.seo_title,

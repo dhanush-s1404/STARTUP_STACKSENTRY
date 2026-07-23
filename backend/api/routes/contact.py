@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from database.config import get_db
 from database.models import ContactMessage, FAQ as FAQModel
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/contact", tags=["Contact"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 class ContactRequest(BaseModel):
@@ -46,7 +50,8 @@ class NewsletterSubscribe(BaseModel):
 
 
 @router.post("")
-async def submit_contact(body: ContactRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def submit_contact(request: Request, body: ContactRequest, db: AsyncSession = Depends(get_db)):
     message = ContactMessage(
         name=body.name,
         email=body.email,
@@ -65,7 +70,8 @@ async def submit_contact(body: ContactRequest, db: AsyncSession = Depends(get_db
 
 
 @router.post("/consultation")
-async def submit_consultation(body: ConsultationRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def submit_consultation(request: Request, body: ConsultationRequest, db: AsyncSession = Depends(get_db)):
     from database.models import ConsultationRequest as ConsultationRequestModel
 
     cr = ConsultationRequestModel(
@@ -91,7 +97,8 @@ async def submit_consultation(body: ConsultationRequest, db: AsyncSession = Depe
 
 
 @router.post("/newsletter")
-async def subscribe_newsletter(body: NewsletterSubscribe, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def subscribe_newsletter(request: Request, body: NewsletterSubscribe, db: AsyncSession = Depends(get_db)):
     from database.models import NewsletterSubscriber
 
     existing = await db.execute(
@@ -125,8 +132,8 @@ async def list_contact_faqs(
         from sqlalchemy import or_
         query = query.where(
             or_(
-                FAQModel.question.ilike(f"%{search}%"),
-                FAQModel.answer.ilike(f"%{search}%"),
+                FAQModel.question.ilike(f"%{escape_like(search)}%", escape="\\"),
+                FAQModel.answer.ilike(f"%{escape_like(search)}%", escape="\\"),
             )
         )
 

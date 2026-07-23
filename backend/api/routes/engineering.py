@@ -8,6 +8,7 @@ from database.models import (
     EngineeringPrinciple, SecurityTopic, KnowledgeArticle,
     PerformanceTopic, ArchitectureLayer,
 )
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/engineering", tags=["Engineering"])
 
@@ -30,7 +31,7 @@ async def list_principles(
     category: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(EngineeringPrinciple).where(EngineeringPrinciple.is_active == True)
+    stmt = select(EngineeringPrinciple).where(EngineeringPrinciple.is_active == True, EngineeringPrinciple.deleted_at.is_(None))
     if category:
         stmt = stmt.where(EngineeringPrinciple.category == category)
     stmt = stmt.order_by(EngineeringPrinciple.order)
@@ -55,6 +56,7 @@ async def get_principle(slug: str, db: AsyncSession = Depends(get_db)):
         select(EngineeringPrinciple).where(
             EngineeringPrinciple.slug == slug,
             EngineeringPrinciple.is_active == True,
+            EngineeringPrinciple.deleted_at.is_(None),
         )
     )
     p = result.scalar_one_or_none()
@@ -81,7 +83,7 @@ async def list_security_topics(
     category: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(SecurityTopic).where(SecurityTopic.is_active == True)
+    stmt = select(SecurityTopic).where(SecurityTopic.is_active == True, SecurityTopic.deleted_at.is_(None))
     if category:
         stmt = stmt.where(SecurityTopic.category == category)
     stmt = stmt.order_by(SecurityTopic.order)
@@ -105,6 +107,7 @@ async def get_security_topic(slug: str, db: AsyncSession = Depends(get_db)):
         select(SecurityTopic).where(
             SecurityTopic.slug == slug,
             SecurityTopic.is_active == True,
+            SecurityTopic.deleted_at.is_(None),
         )
     )
     t = result.scalar_one_or_none()
@@ -129,7 +132,7 @@ async def get_security_topic(slug: str, db: AsyncSession = Depends(get_db)):
 async def list_architecture_layers(db: AsyncSession = Depends(get_db)):
     stmt = (
         select(ArchitectureLayer)
-        .where(ArchitectureLayer.is_active == True)
+        .where(ArchitectureLayer.is_active == True, ArchitectureLayer.deleted_at.is_(None))
         .order_by(ArchitectureLayer.layer_order)
     )
     result = await db.execute(stmt)
@@ -156,6 +159,7 @@ async def get_architecture_layer(slug: str, db: AsyncSession = Depends(get_db)):
         select(ArchitectureLayer).where(
             ArchitectureLayer.slug == slug,
             ArchitectureLayer.is_active == True,
+            ArchitectureLayer.deleted_at.is_(None),
         )
     )
     l = result.scalar_one_or_none()
@@ -187,18 +191,18 @@ async def list_knowledge_articles(
     tag: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(KnowledgeArticle).where(KnowledgeArticle.is_active == True)
+    stmt = select(KnowledgeArticle).where(KnowledgeArticle.is_active == True, KnowledgeArticle.deleted_at.is_(None))
     if category:
         stmt = stmt.where(KnowledgeArticle.category == category)
     if search:
         stmt = stmt.where(
             or_(
-                KnowledgeArticle.title.ilike(f"%{search}%"),
-                KnowledgeArticle.excerpt.ilike(f"%{search}%"),
+                KnowledgeArticle.title.ilike(f"%{escape_like(search)}%", escape="\\"),
+                KnowledgeArticle.excerpt.ilike(f"%{escape_like(search)}%", escape="\\"),
             )
         )
     if tag:
-        stmt = stmt.where(KnowledgeArticle.tags.ilike(f"%{tag}%"))
+        stmt = stmt.where(KnowledgeArticle.tags.ilike(f"%{escape_like(tag)}%", escape="\\"))
     stmt = stmt.order_by(KnowledgeArticle.order)
     result = await db.execute(stmt)
     items = result.scalars().all()
@@ -220,6 +224,7 @@ async def get_knowledge_article(slug: str, db: AsyncSession = Depends(get_db)):
         select(KnowledgeArticle).where(
             KnowledgeArticle.slug == slug,
             KnowledgeArticle.is_active == True,
+            KnowledgeArticle.deleted_at.is_(None),
         )
     )
     a = result.scalar_one_or_none()
@@ -246,7 +251,7 @@ async def list_performance_topics(
     category: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(PerformanceTopic).where(PerformanceTopic.is_active == True)
+    stmt = select(PerformanceTopic).where(PerformanceTopic.is_active == True, PerformanceTopic.deleted_at.is_(None))
     if category:
         stmt = stmt.where(PerformanceTopic.category == category)
     stmt = stmt.order_by(PerformanceTopic.order)
@@ -271,6 +276,7 @@ async def get_performance_topic(slug: str, db: AsyncSession = Depends(get_db)):
         select(PerformanceTopic).where(
             PerformanceTopic.slug == slug,
             PerformanceTopic.is_active == True,
+            PerformanceTopic.deleted_at.is_(None),
         )
     )
     t = result.scalar_one_or_none()

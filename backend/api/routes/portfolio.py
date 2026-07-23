@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, case, literal_column, update
 from database.config import get_db
 from database.models import Project, ProjectCategory
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
 
@@ -65,13 +66,13 @@ async def search_projects(
     page_size: int = Query(12, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    like_pattern = f"%{q}%"
+    like_pattern = f"%{escape_like(q)}%"
     relevance = (
         case(
-            (Project.title.ilike(like_pattern), 10),
-            (Project.short_description.ilike(like_pattern), 7),
-            (Project.technologies.ilike(like_pattern), 5),
-            (Project.industry_slug.ilike(like_pattern), 3),
+            (Project.title.ilike(like_pattern, escape="\\"), 10),
+            (Project.short_description.ilike(like_pattern, escape="\\"), 7),
+            (Project.technologies.ilike(like_pattern, escape="\\"), 5),
+            (Project.industry_slug.ilike(like_pattern, escape="\\"), 3),
             else_=1,
         )
     ).label("relevance")
@@ -82,10 +83,10 @@ async def search_projects(
             Project.is_published == True,
             Project.deleted_at.is_(None),
             (
-                Project.title.ilike(like_pattern)
-                | Project.short_description.ilike(like_pattern)
-                | Project.technologies.ilike(like_pattern)
-                | Project.industry_slug.ilike(like_pattern)
+                Project.title.ilike(like_pattern, escape="\\")
+                | Project.short_description.ilike(like_pattern, escape="\\")
+                | Project.technologies.ilike(like_pattern, escape="\\")
+                | Project.industry_slug.ilike(like_pattern, escape="\\")
             ),
         )
         .order_by(literal_column("relevance").desc(), Project.sort_order)
@@ -187,7 +188,9 @@ async def list_projects(
     if status:
         conditions.append(Project.status == status)
     if search:
-        conditions.append(Project.title.ilike(f"%{search}%"))
+        conditions.append(Project.title.ilike(f"%{escape_like(search)}%", escape="\\"))
+    if technology:
+        conditions.append(Project.technologies.ilike(f"%{escape_like(technology)}%", escape="\\"))
 
     count_result = await db.execute(
         select(func.count()).select_from(Project).where(and_(*conditions))
@@ -208,19 +211,12 @@ async def list_projects(
     )
     projects = result.scalars().all()
 
-    items = []
-    for p in projects:
-        d = _project_dict(p)
-        if technology and technology.lower() not in (p.technologies or "").lower():
-            continue
-        items.append(d)
-
     return {
-        "items": items,
+        "items": [_project_dict(p) for p in projects],
         "total": total,
         "page": page,
         "page_size": page_size,
-        "total_pages": (total + page_size - 1) // page_size,
+        "total_pages": (total + page_size - 1) // page_size if total else 0,
     }
 
 

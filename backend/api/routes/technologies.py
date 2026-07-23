@@ -9,12 +9,21 @@ from database.models import Technology
 router = APIRouter(prefix="/api/technologies", tags=["Technologies"])
 
 
+def _json_load(val):
+    if not val:
+        return []
+    try:
+        return json.loads(val)
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
 @router.get("")
 async def list_technologies(
     category: Optional[str] = Query(None, description="Filter by technology category"),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Technology).where(Technology.is_active == True)
+    stmt = select(Technology).where(Technology.is_active == True, Technology.deleted_at.is_(None))
     if category:
         stmt = stmt.where(and_(Technology.category == category))
     stmt = stmt.order_by(Technology.order)
@@ -30,7 +39,7 @@ async def list_technologies(
             "icon": t.icon_url,
             "icon_url": t.icon_url,
             "experience_level": t.experience_level,
-            "use_cases": json.loads(t.use_cases) if t.use_cases else [],
+            "use_cases": _json_load(t.use_cases),
         }
         for t in technologies
     ]
@@ -38,7 +47,7 @@ async def list_technologies(
 
 @router.get("/{slug}")
 async def get_technology(slug: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Technology).where(Technology.slug == slug))
+    result = await db.execute(select(Technology).where(Technology.slug == slug, Technology.deleted_at.is_(None)))
     technology = result.scalar_one_or_none()
     if not technology:
         raise HTTPException(status_code=404, detail="Technology not found")
@@ -51,5 +60,5 @@ async def get_technology(slug: str, db: AsyncSession = Depends(get_db)):
         "icon": technology.icon_url,
         "icon_url": technology.icon_url,
         "experience_level": technology.experience_level,
-        "use_cases": json.loads(technology.use_cases) if technology.use_cases else [],
+        "use_cases": _json_load(technology.use_cases),
     }

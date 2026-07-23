@@ -45,20 +45,24 @@ export function FileUpload({
     (newFiles: FileList | File[]) => {
       const fileArray = Array.from(newFiles);
       const valid = fileArray.filter((f) => f.size <= maxSize);
-      const updated = multiple ? [...files, ...valid] : valid;
-      setFiles(updated);
-      onFilesChange?.(updated);
+      setFiles((prev) => {
+        const updated = multiple ? [...prev, ...valid] : valid;
+        onFilesChange?.(updated);
+        return updated;
+      });
     },
-    [files, multiple, maxSize, onFilesChange],
+    [multiple, maxSize, onFilesChange],
   );
 
   const removeFile = useCallback(
     (index: number) => {
-      const updated = files.filter((_, i) => i !== index);
-      setFiles(updated);
-      onFilesChange?.(updated);
+      setFiles((prev) => {
+        const updated = prev.filter((_, i) => i !== index);
+        onFilesChange?.(updated);
+        return updated;
+      });
     },
-    [files, onFilesChange],
+    [onFilesChange],
   );
 
   return (

@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import DeclarativeBase
 from pydantic_settings import BaseSettings
 from pydantic import Field
+import asyncio
 import logging
 import secrets
 
@@ -86,8 +87,18 @@ async def create_tables():
 
 
 async def get_db():
-    async with async_session() as session:
+    max_retries = 2
+    for attempt in range(max_retries + 1):
         try:
-            yield session
-        finally:
-            await session.close()
+            async with async_session() as session:
+                yield session
+                return
+        except Exception as e:
+            if attempt < max_retries:
+                logger.warning(
+                    "DB connection failed (attempt %d/%d): %s — retrying",
+                    attempt + 1, max_retries + 1, e,
+                )
+                await asyncio.sleep(0.5 * (attempt + 1))
+            else:
+                raise

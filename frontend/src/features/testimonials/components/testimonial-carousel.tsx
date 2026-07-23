@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/cn";
 import { AnimatePresence, MotionDiv } from "@/lib/motion";
 import { Container } from "@/components/ui/container";
@@ -43,6 +43,7 @@ export function TestimonialCarousel({
   const isDesktop = useDesktop();
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const visibleCount = isDesktop ? 3 : 1;
   const totalPages = Math.ceil(testimonials.length / visibleCount);
@@ -73,6 +74,18 @@ export function TestimonialCarousel({
     return () => clearInterval(timer);
   }, [autoPlay, interval, isPaused, paginate]);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); paginate(-1); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); paginate(1); }
+    };
+    el.addEventListener("keydown", handleKeyDown);
+    return () => el.removeEventListener("keydown", handleKeyDown);
+  }, [paginate]);
+
   const startIndex = page * visibleCount;
   const visibleTestimonials = testimonials.slice(startIndex, startIndex + visibleCount);
 
@@ -88,9 +101,13 @@ export function TestimonialCarousel({
       <Container>
         <FadeIn>
           <div
+            ref={containerRef}
             className="relative"
+            tabIndex={0}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
+            onFocus={() => setIsPaused(true)}
+            onBlur={() => setIsPaused(false)}
             role="region"
             aria-roledescription="carousel"
             aria-label="Client testimonials"

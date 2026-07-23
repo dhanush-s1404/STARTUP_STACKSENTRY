@@ -9,6 +9,15 @@ from api.deps import get_current_admin
 router = APIRouter(prefix="/api/admin/services", tags=["Admin Services"])
 
 
+def _json_load(val):
+    if not val:
+        return []
+    try:
+        return json.loads(val)
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
 @router.get("")
 async def admin_list_services(
     db: AsyncSession = Depends(get_db),
@@ -53,10 +62,10 @@ async def admin_get_service(
         "description": service.description,
         "short_description": service.short_description,
         "icon": service.icon,
-        "features": json.loads(service.features) if service.features else [],
-        "process": json.loads(service.process) if service.process else [],
-        "faq": json.loads(service.faq) if service.faq else [],
-        "technologies": json.loads(service.technologies) if service.technologies else [],
+        "features": _json_load(service.features),
+        "process": _json_load(service.process),
+        "faq": _json_load(service.faq),
+        "technologies": _json_load(service.technologies),
         "pricing_tier": service.pricing_tier,
         "status": service.status,
         "seo_title": service.seo_title,

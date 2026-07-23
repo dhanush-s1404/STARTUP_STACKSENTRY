@@ -31,16 +31,29 @@ export function MeetingRequestForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
+  const [formErrors, setFormErrors] = useState<{name?: string; email?: string}>({});
   const [form, setForm] = useState({
     name: "", email: "", phone: "", company: "",
     date: "", time: "", timezone: "", meetingType: "video", notes: "",
   });
 
-  const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+  const update = (key: string, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (formErrors[key as keyof typeof formErrors]) {
+      setFormErrors((prev) => ({ ...prev, [key]: undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email) return;
+    const errors: {name?: string; email?: string} = {};
+    if (!form.name.trim()) errors.name = "Name is required";
+    if (!form.email.trim()) errors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = "Please enter a valid email";
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
     setSubmitting(true);
     try {
       await api.post("/consultation/meeting-request", {
@@ -104,8 +117,14 @@ export function MeetingRequestForm() {
           <Card glass className="p-8 sm:p-10">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2">
-                <InputField label="Your Name *" value={form.name} onChange={(v) => update("name", v)} placeholder="John Doe" />
-                <InputField label="Email *" value={form.email} onChange={(v) => update("email", v)} placeholder="john@acme.com" type="email" />
+                <div>
+                  <InputField label="Your Name *" value={form.name} onChange={(v) => update("name", v)} placeholder="John Doe" />
+                  {formErrors.name && <p className="mt-1 text-xs text-red-400">{formErrors.name}</p>}
+                </div>
+                <div>
+                  <InputField label="Email *" value={form.email} onChange={(v) => update("email", v)} placeholder="john@acme.com" type="email" />
+                  {formErrors.email && <p className="mt-1 text-xs text-red-400">{formErrors.email}</p>}
+                </div>
                 <InputField label="Phone" value={form.phone} onChange={(v) => update("phone", v)} placeholder="+1 555-0123" />
                 <InputField label="Company" value={form.company} onChange={(v) => update("company", v)} placeholder="Acme Corp" />
               </div>
@@ -213,10 +232,12 @@ export function MeetingRequestForm() {
 function InputField({ label, value, onChange, placeholder, type = "text" }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
+  const inputId = `input-${label.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}`;
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-white/60">{label}</label>
+      <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-white/60">{label}</label>
       <input
+        id={inputId}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

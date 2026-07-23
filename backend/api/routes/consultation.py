@@ -1,16 +1,20 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from database.config import get_db
 from database.models import (
     ProjectDiscovery, MeetingRequest, FAQ, BudgetRange,
     TechnologyRecommendation, AuditLog,
 )
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/consultation", tags=["Consultation"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _json_load(val):
@@ -72,7 +76,8 @@ class MeetingRequestCreate(BaseModel):
 # ===================================================================
 
 @router.post("/project-discovery")
-async def create_project_discovery(payload: ProjectDiscoveryCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def create_project_discovery(request: Request, payload: ProjectDiscoveryCreate, db: AsyncSession = Depends(get_db)):
     discovery = ProjectDiscovery(
         company=payload.company,
         industry=payload.industry,
@@ -105,7 +110,8 @@ async def create_project_discovery(payload: ProjectDiscoveryCreate, db: AsyncSes
 # ===================================================================
 
 @router.post("/meeting-request")
-async def create_meeting_request(payload: MeetingRequestCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def create_meeting_request(request: Request, payload: MeetingRequestCreate, db: AsyncSession = Depends(get_db)):
     meeting = MeetingRequest(
         name=payload.name,
         email=payload.email,
@@ -140,8 +146,8 @@ async def list_faqs(
     stmt = select(FAQ).where(FAQ.is_active == True, FAQ.deleted_at.is_(None))
     if search:
         stmt = stmt.where(or_(
-            FAQ.question.ilike(f"%{search}%"),
-            FAQ.answer.ilike(f"%{search}%"),
+            FAQ.question.ilike(f"%{escape_like(search)}%", escape="\\"),
+            FAQ.answer.ilike(f"%{escape_like(search)}%", escape="\\"),
         ))
     if category:
         stmt = stmt.where(FAQ.category == category)

@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, case, literal_column
 from database.config import get_db
 from database.models import CaseStudy
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/case-studies", tags=["Case Studies"])
 
@@ -61,12 +62,12 @@ async def search_case_studies(
     page_size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    like_pattern = f"%{q}%"
+    like_pattern = f"%{escape_like(q)}%"
     relevance = (
         case(
-            (CaseStudy.title.ilike(like_pattern), 10),
-            (CaseStudy.subtitle.ilike(like_pattern), 7),
-            (CaseStudy.technologies_used.ilike(like_pattern), 5),
+            (CaseStudy.title.ilike(like_pattern, escape="\\"), 10),
+            (CaseStudy.subtitle.ilike(like_pattern, escape="\\"), 7),
+            (CaseStudy.technologies_used.ilike(like_pattern, escape="\\"), 5),
             else_=1,
         )
     ).label("relevance")
@@ -77,9 +78,9 @@ async def search_case_studies(
             CaseStudy.is_published == True,
             CaseStudy.deleted_at.is_(None),
             (
-                CaseStudy.title.ilike(like_pattern)
-                | CaseStudy.subtitle.ilike(like_pattern)
-                | CaseStudy.technologies_used.ilike(like_pattern)
+                CaseStudy.title.ilike(like_pattern, escape="\\")
+                | CaseStudy.subtitle.ilike(like_pattern, escape="\\")
+                | CaseStudy.technologies_used.ilike(like_pattern, escape="\\")
             ),
         )
         .order_by(literal_column("relevance").desc(), CaseStudy.sort_order)

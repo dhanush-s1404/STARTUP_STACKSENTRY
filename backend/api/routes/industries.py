@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database.config import get_db
 from database.models import Industry
+from api.utils import escape_like
 
 router = APIRouter(prefix="/api/industries", tags=["Industries"])
 
@@ -16,7 +17,7 @@ async def list_industries(
     stmt = select(Industry).where(Industry.is_active == True)
     if search:
         stmt = stmt.where(
-            Industry.title.ilike(f"%{search}%")
+            Industry.title.ilike(f"%{escape_like(search)}%", escape="\\")
         )
     stmt = stmt.order_by(Industry.order)
     result = await db.execute(stmt)
