@@ -30,13 +30,3 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
   clearSearchHistory: () => set({ searchHistory: [] }),
 }));
-
-type ThemeState = {
-  theme: "dark" | "light" | "system";
-  setTheme: (theme: "dark" | "light" | "system") => void;
-};
-
-export const useThemeStore = create<ThemeState>((set) => ({
-  theme: "dark",
-  setTheme: (theme) => set({ theme }),
-}));

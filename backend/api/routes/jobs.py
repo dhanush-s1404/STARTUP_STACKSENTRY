@@ -1,71 +1,9 @@
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, case, literal_column
 from database.config import get_db
 from database.models import Job
-
-
-class JobCreate(BaseModel):
-    title: str
-    slug: str
-    description: Optional[str] = None
-    short_description: Optional[str] = None
-    department_id: Optional[str] = None
-    location_id: Optional[str] = None
-    employment_type: Optional[str] = None
-    experience_level: Optional[str] = None
-    work_model: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    salary_currency: Optional[str] = "USD"
-    is_active: Optional[bool] = True
-    is_featured: Optional[bool] = False
-    posted_at: Optional[str] = None
-    application_deadline: Optional[str] = None
-    responsibilities: Optional[str] = None
-    requirements: Optional[str] = None
-    preferred_skills: Optional[str] = None
-    benefits: Optional[str] = None
-    technology_stack: Optional[str] = None
-    interview_process: Optional[str] = None
-    team_info: Optional[str] = None
-    seo_title: Optional[str] = None
-    seo_description: Optional[str] = None
-    seo_keywords: Optional[str] = None
-    order: Optional[int] = 0
-
-
-class JobUpdate(BaseModel):
-    title: Optional[str] = None
-    slug: Optional[str] = None
-    description: Optional[str] = None
-    short_description: Optional[str] = None
-    department_id: Optional[str] = None
-    location_id: Optional[str] = None
-    employment_type: Optional[str] = None
-    experience_level: Optional[str] = None
-    work_model: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    salary_currency: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_featured: Optional[bool] = None
-    posted_at: Optional[str] = None
-    application_deadline: Optional[str] = None
-    responsibilities: Optional[str] = None
-    requirements: Optional[str] = None
-    preferred_skills: Optional[str] = None
-    benefits: Optional[str] = None
-    technology_stack: Optional[str] = None
-    interview_process: Optional[str] = None
-    team_info: Optional[str] = None
-    seo_title: Optional[str] = None
-    seo_description: Optional[str] = None
-    seo_keywords: Optional[str] = None
-    order: Optional[int] = None
 
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
@@ -241,70 +179,4 @@ async def list_jobs(
     }
 
 
-@router.post("")
-async def create_job(payload: JobCreate, db: AsyncSession = Depends(get_db)):
-    job = Job(
-        title=payload.title,
-        slug=payload.slug,
-        description=payload.description,
-        short_description=payload.short_description,
-        department_id=payload.department_id,
-        location_id=payload.location_id,
-        employment_type=payload.employment_type,
-        experience_level=payload.experience_level,
-        work_model=payload.work_model,
-        salary_min=payload.salary_min,
-        salary_max=payload.salary_max,
-        salary_currency=payload.salary_currency,
-        is_active=payload.is_active,
-        is_featured=payload.is_featured,
-        posted_at=payload.posted_at,
-        application_deadline=payload.application_deadline,
-        responsibilities=payload.responsibilities,
-        requirements=payload.requirements,
-        preferred_skills=payload.preferred_skills,
-        benefits=payload.benefits,
-        technology_stack=payload.technology_stack,
-        interview_process=payload.interview_process,
-        team_info=payload.team_info,
-        seo_title=payload.seo_title,
-        seo_description=payload.seo_description,
-        seo_keywords=payload.seo_keywords,
-        order=payload.order,
-    )
-    db.add(job)
-    await db.commit()
-    await db.refresh(job)
-    return _job_dict(job)
 
-
-@router.put("/{job_id}")
-async def update_job(job_id: str, payload: JobUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Job).where(Job.id == job_id, Job.deleted_at.is_(None))
-    )
-    job = result.scalar_one_or_none()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    update_data = payload.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(job, field, value)
-
-    await db.commit()
-    await db.refresh(job)
-    return _job_dict(job)
-
-
-@router.delete("/{job_id}")
-async def delete_job(job_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Job).where(Job.id == job_id, Job.deleted_at.is_(None))
-    )
-    job = result.scalar_one_or_none()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    job.deleted_at = datetime.now(timezone.utc)
-    await db.commit()
-    return {"detail": "Job deleted"}

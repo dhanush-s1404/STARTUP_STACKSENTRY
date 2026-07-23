@@ -5,7 +5,8 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from database.config import get_db
-from database.models import JobApplication
+from database.models import JobApplication, User
+from api.deps import get_current_admin
 
 
 class ApplicationCreate(BaseModel):
@@ -79,6 +80,7 @@ async def list_applications(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
 ):
     conditions = [JobApplication.deleted_at.is_(None)]
     if job_id:
@@ -148,7 +150,8 @@ async def create_application(payload: ApplicationCreate, db: AsyncSession = Depe
 
 @router.put("/{application_id}/status")
 async def update_application_status(
-    application_id: str, payload: StatusUpdate, db: AsyncSession = Depends(get_db)
+    application_id: str, payload: StatusUpdate, db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
 ):
     result = await db.execute(
         select(JobApplication).where(

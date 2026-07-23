@@ -7,12 +7,9 @@ from database.models import (
     BusinessChallenge, ROITemplate, ConsultationRequest,
     ArchitectureModel, WorldCoverage, BusinessMetric, AuditLog,
 )
+from api.deps import get_current_admin
 
 router = APIRouter(prefix="/api/admin/enterprise", tags=["Admin Enterprise"])
-
-
-async def get_current_admin():
-    return {"id": "admin", "name": "Administrator"}
 
 
 def _json_load(val):
@@ -93,10 +90,9 @@ async def admin_create_challenge(data: dict, db: AsyncSession = Depends(get_db),
         relevant_industries=json.dumps(data.get("relevant_industries", [])),
         metrics=json.dumps(data.get("metrics", [])),
         order=data.get("order", 0), is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(c)
-    await db.commit()
     await db.refresh(c)
     _log(db, "business_challenges", c.id, "CREATE", new={"slug": c.slug, "title": c.title})
     await db.commit()
@@ -116,8 +112,7 @@ async def admin_update_challenge(slug: str, data: dict, db: AsyncSession = Depen
     for jf in ("symptoms", "recommended_solutions", "relevant_industries", "metrics"):
         if jf in data:
             setattr(c, jf, json.dumps(data[jf]))
-    c.updated_by = admin["id"]
-    await db.commit()
+    c.updated_by = str(admin.id)
     _log(db, "business_challenges", c.id, "UPDATE", old=old, new={"slug": c.slug, "title": c.title})
     await db.commit()
     return {"id": c.id, "slug": c.slug, "title": c.title}
@@ -131,8 +126,7 @@ async def admin_delete_challenge(slug: str, db: AsyncSession = Depends(get_db), 
         raise HTTPException(status_code=404, detail="BusinessChallenge not found")
     c.deleted_at = func.now()
     c.is_active = False
-    c.updated_by = admin["id"]
-    await db.commit()
+    c.updated_by = str(admin.id)
     _log(db, "business_challenges", c.id, "DELETE", old={"slug": c.slug, "title": c.title})
     await db.commit()
     return {"detail": "BusinessChallenge deleted"}
@@ -193,7 +187,7 @@ async def admin_create_roi_template(data: dict, db: AsyncSession = Depends(get_d
         default_values=json.dumps(data.get("default_values", {})),
         output_metrics=json.dumps(data.get("output_metrics", [])),
         order=data.get("order", 0), is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(t)
     await db.commit()
@@ -216,7 +210,7 @@ async def admin_update_roi_template(slug: str, data: dict, db: AsyncSession = De
     for jf in ("inputs", "formulas", "default_values", "output_metrics"):
         if jf in data:
             setattr(t, jf, json.dumps(data[jf]))
-    t.updated_by = admin["id"]
+    t.updated_by = str(admin.id)
     await db.commit()
     _log(db, "roi_templates", t.id, "UPDATE", old=old, new={"slug": t.slug, "title": t.title})
     await db.commit()
@@ -231,7 +225,7 @@ async def admin_delete_roi_template(slug: str, db: AsyncSession = Depends(get_db
         raise HTTPException(status_code=404, detail="ROITemplate not found")
     t.deleted_at = func.now()
     t.is_active = False
-    t.updated_by = admin["id"]
+    t.updated_by = str(admin.id)
     await db.commit()
     _log(db, "roi_templates", t.id, "DELETE", old={"slug": t.slug, "title": t.title})
     await db.commit()
@@ -364,7 +358,7 @@ async def admin_create_architecture(data: dict, db: AsyncSession = Depends(get_d
         technologies=json.dumps(data.get("technologies", [])),
         diagram_data=json.dumps(data.get("diagram_data", {})),
         order=data.get("order", 0), is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(m)
     await db.commit()
@@ -387,7 +381,7 @@ async def admin_update_architecture(slug: str, data: dict, db: AsyncSession = De
     for jf in ("layers", "technologies", "diagram_data"):
         if jf in data:
             setattr(m, jf, json.dumps(data[jf]))
-    m.updated_by = admin["id"]
+    m.updated_by = str(admin.id)
     await db.commit()
     _log(db, "architecture_models", m.id, "UPDATE", old=old, new={"slug": m.slug, "title": m.title})
     await db.commit()
@@ -402,7 +396,7 @@ async def admin_delete_architecture(slug: str, db: AsyncSession = Depends(get_db
         raise HTTPException(status_code=404, detail="ArchitectureModel not found")
     m.deleted_at = func.now()
     m.is_active = False
-    m.updated_by = admin["id"]
+    m.updated_by = str(admin.id)
     await db.commit()
     _log(db, "architecture_models", m.id, "DELETE", old={"slug": m.slug, "title": m.title})
     await db.commit()
@@ -457,7 +451,7 @@ async def admin_create_coverage(data: dict, db: AsyncSession = Depends(get_db), 
         timezone=data.get("timezone"), languages=data.get("languages"),
         cloud_regions=data.get("cloud_regions"), support_available=data.get("support_available", True),
         order=data.get("order", 0), is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(c)
     await db.commit()
@@ -477,7 +471,7 @@ async def admin_update_coverage(record_id: str, data: dict, db: AsyncSession = D
     for field in ("country", "code", "region", "status", "delivery_center", "timezone", "languages", "cloud_regions", "support_available", "order", "is_active"):
         if field in data:
             setattr(c, field, data[field])
-    c.updated_by = admin["id"]
+    c.updated_by = str(admin.id)
     await db.commit()
     _log(db, "world_coverage", c.id, "UPDATE", old=old, new={"country": c.country})
     await db.commit()
@@ -492,7 +486,7 @@ async def admin_delete_coverage(record_id: str, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=404, detail="WorldCoverage not found")
     c.deleted_at = func.now()
     c.is_active = False
-    c.updated_by = admin["id"]
+    c.updated_by = str(admin.id)
     await db.commit()
     _log(db, "world_coverage", c.id, "DELETE", old={"country": c.country})
     await db.commit()
@@ -548,7 +542,7 @@ async def admin_create_metric(data: dict, db: AsyncSession = Depends(get_db), ad
         description=data.get("description"), category=data.get("category"),
         icon=data.get("icon"), source=data.get("source"),
         order=data.get("order", 0), is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(m)
     await db.commit()
@@ -568,7 +562,7 @@ async def admin_update_metric(slug: str, data: dict, db: AsyncSession = Depends(
     for field in ("slug", "label", "value", "suffix", "prefix", "description", "category", "icon", "source", "order", "is_active"):
         if field in data:
             setattr(m, field, data[field])
-    m.updated_by = admin["id"]
+    m.updated_by = str(admin.id)
     await db.commit()
     _log(db, "business_metrics", m.id, "UPDATE", old=old, new={"slug": m.slug, "label": m.label})
     await db.commit()
@@ -583,7 +577,7 @@ async def admin_delete_metric(slug: str, db: AsyncSession = Depends(get_db), adm
         raise HTTPException(status_code=404, detail="BusinessMetric not found")
     m.deleted_at = func.now()
     m.is_active = False
-    m.updated_by = admin["id"]
+    m.updated_by = str(admin.id)
     await db.commit()
     _log(db, "business_metrics", m.id, "DELETE", old={"slug": m.slug, "label": m.label})
     await db.commit()

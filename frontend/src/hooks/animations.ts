@@ -36,12 +36,19 @@ export function useParallax(speed = 0.5) {
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      if (!ref.current) return;
-      const rect = ref.current.getBoundingClientRect();
-      const elementCenter = rect.top + rect.height / 2;
-      const windowCenter = window.innerHeight / 2;
-      setOffset((windowCenter - elementCenter) * speed);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (!ref.current) { ticking = false; return; }
+          const rect = ref.current.getBoundingClientRect();
+          const elementCenter = rect.top + rect.height / 2;
+          const windowCenter = window.innerHeight / 2;
+          setOffset((windowCenter - elementCenter) * speed);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });

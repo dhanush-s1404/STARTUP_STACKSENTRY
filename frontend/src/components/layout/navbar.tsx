@@ -258,12 +258,12 @@ export function Navbar() {
             >
               <Search className="h-4 w-4" />
             </button>
-            <Button variant="ghost" size="sm">
-              Log In
-            </Button>
-            <Button variant="primary" size="sm">
-              Get Started
-            </Button>
+            <Link href="/company/contact">
+              <Button variant="ghost" size="sm">Log In</Button>
+            </Link>
+            <Link href="/company/contact">
+              <Button variant="primary" size="sm">Get Started</Button>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
@@ -387,12 +387,16 @@ export function Navbar() {
               </div>
 
               <div className="mt-6 flex flex-col gap-3 border-t border-white/[0.06] pt-6">
-                <Button variant="ghost" size="lg" className="w-full justify-center">
-                  Log In
-                </Button>
-                <Button variant="primary" size="lg" className="w-full justify-center">
-                  Get Started
-                </Button>
+                <Link href="/company/contact" className="w-full">
+                  <Button variant="ghost" size="lg" className="w-full justify-center">
+                    Log In
+                  </Button>
+                </Link>
+                <Link href="/company/contact" className="w-full">
+                  <Button variant="primary" size="lg" className="w-full justify-center">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </Container>
           </motion.div>

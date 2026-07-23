@@ -92,11 +92,11 @@ async def create_project_discovery(payload: ProjectDiscoveryCreate, db: AsyncSes
         status="submitted",
     )
     db.add(discovery)
-    await db.commit()
-    await db.refresh(discovery)
+    await db.flush()
     _log(db, "project_discoveries", discovery.id, "CREATE",
          new={"contact_name": discovery.contact_name, "contact_email": discovery.contact_email})
     await db.commit()
+    await db.refresh(discovery)
     return {"id": discovery.id, "message": "Project discovery submitted successfully"}
 
 
@@ -119,11 +119,11 @@ async def create_meeting_request(payload: MeetingRequestCreate, db: AsyncSession
         status="pending",
     )
     db.add(meeting)
-    await db.commit()
-    await db.refresh(meeting)
+    await db.flush()
     _log(db, "meeting_requests", meeting.id, "CREATE",
          new={"name": meeting.name, "email": meeting.email})
     await db.commit()
+    await db.refresh(meeting)
     return {"id": meeting.id, "message": "Meeting request submitted successfully"}
 
 

@@ -4,7 +4,8 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from database.config import get_db
-from database.models import ProjectInquiry
+from database.models import ProjectInquiry, User
+from api.deps import get_current_admin
 
 router = APIRouter(prefix="/api/inquiry", tags=["Inquiry"])
 
@@ -71,6 +72,7 @@ async def list_inquiries(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
 ):
     conditions = [ProjectInquiry.deleted_at.is_(None)]
     if status:
@@ -105,6 +107,7 @@ async def update_inquiry_status(
     status: str = Query(...),
     notes: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
 ):
     valid_statuses = {"new", "contacted", "qualified", "proposal", "closed"}
     if status not in valid_statuses:
@@ -128,7 +131,10 @@ async def update_inquiry_status(
 
 
 @router.get("/stats")
-async def get_inquiry_stats(db: AsyncSession = Depends(get_db)):
+async def get_inquiry_stats(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
     result = await db.execute(
         select(
             ProjectInquiry.status,
@@ -152,7 +158,10 @@ async def get_inquiry_stats(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/{inquiry_id}")
-async def get_inquiry(inquiry_id: str, db: AsyncSession = Depends(get_db)):
+async def get_inquiry(
+    inquiry_id: str, db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
     result = await db.execute(
         select(ProjectInquiry).where(
             ProjectInquiry.id == inquiry_id, ProjectInquiry.deleted_at.is_(None)

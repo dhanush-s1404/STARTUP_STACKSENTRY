@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, case, literal_column
+from sqlalchemy import select, func, and_, case, literal_column, update
 from database.config import get_db
 from database.models import Project, ProjectCategory
 
@@ -117,10 +117,15 @@ async def get_project_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    project.view_count = (project.view_count or 0) + 1
+    await db.execute(
+        update(Project)
+        .where(Project.id == project.id)
+        .values(view_count=Project.view_count + 1)
+    )
     await db.commit()
 
     d = _project_dict(project)
+    d["view_count"] = (project.view_count or 0) + 1
     d["images"] = [
         {
             "id": img.id,
@@ -228,10 +233,15 @@ async def get_project(slug: str, db: AsyncSession = Depends(get_db)):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    project.view_count = (project.view_count or 0) + 1
+    await db.execute(
+        update(Project)
+        .where(Project.id == project.id)
+        .values(view_count=Project.view_count + 1)
+    )
     await db.commit()
 
     d = _project_dict(project)
+    d["view_count"] = (project.view_count or 0) + 1
     d["images"] = [
         {
             "id": img.id,

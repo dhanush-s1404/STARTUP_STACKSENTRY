@@ -7,12 +7,9 @@ from database.models import (
     ProjectDiscovery, MeetingRequest, FAQ, BudgetRange,
     TechnologyRecommendation, AuditLog,
 )
+from api.deps import get_current_admin
 
 router = APIRouter(prefix="/api/admin/consultation", tags=["Admin Consultation"])
-
-
-async def get_current_admin():
-    return {"id": "admin", "name": "Administrator"}
 
 
 def _json_load(val):
@@ -141,7 +138,6 @@ async def admin_update_project_discovery(
         if field in data:
             setattr(d, field, data[field])
     d.updated_at = func.now()
-    await db.commit()
     _log(db, "project_discoveries", d.id, "UPDATE", old=old,
          new={"status": d.status, "admin_notes": d.admin_notes, "assigned_to": d.assigned_to})
     await db.commit()
@@ -242,7 +238,6 @@ async def admin_update_meeting_request(
         if field in data:
             setattr(m, field, data[field])
     m.updated_at = func.now()
-    await db.commit()
     _log(db, "meeting_requests", m.id, "UPDATE", old=old,
          new={"status": m.status, "admin_notes": m.admin_notes})
     await db.commit()
@@ -279,10 +274,9 @@ async def admin_create_faq(data: dict, db: AsyncSession = Depends(get_db), admin
         tags=json.dumps(data.get("tags", [])),
         order=data.get("order", 0),
         is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(faq)
-    await db.commit()
     await db.refresh(faq)
     _log(db, "faqs", faq.id, "CREATE", new={"question": faq.question})
     await db.commit()
@@ -316,8 +310,7 @@ async def admin_update_faq(record_id: str, data: dict, db: AsyncSession = Depend
             setattr(f, field, data[field])
     if "tags" in data:
         f.tags = json.dumps(data["tags"])
-    f.updated_by = admin["id"]
-    await db.commit()
+    f.updated_by = str(admin.id)
     _log(db, "faqs", f.id, "UPDATE", old=old, new={"question": f.question, "answer": f.answer})
     await db.commit()
     return {"id": f.id, "question": f.question}
@@ -331,8 +324,7 @@ async def admin_delete_faq(record_id: str, db: AsyncSession = Depends(get_db), a
         raise HTTPException(status_code=404, detail="FAQ not found")
     f.deleted_at = func.now()
     f.is_active = False
-    f.updated_by = admin["id"]
-    await db.commit()
+    f.updated_by = str(admin.id)
     _log(db, "faqs", f.id, "DELETE", old={"question": f.question})
     await db.commit()
     return {"detail": "FAQ deleted"}
@@ -367,10 +359,9 @@ async def admin_create_budget_range(data: dict, db: AsyncSession = Depends(get_d
         max_amount=data.get("max_amount"),
         display_order=data.get("display_order", 0),
         is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(br)
-    await db.commit()
     await db.refresh(br)
     _log(db, "budget_ranges", br.id, "CREATE", new={"label": br.label})
     await db.commit()
@@ -387,8 +378,7 @@ async def admin_update_budget_range(record_id: str, data: dict, db: AsyncSession
     for field in ("label", "min_amount", "max_amount", "display_order", "is_active"):
         if field in data:
             setattr(br, field, data[field])
-    br.updated_by = admin["id"]
-    await db.commit()
+    br.updated_by = str(admin.id)
     _log(db, "budget_ranges", br.id, "UPDATE", old=old, new={"label": br.label})
     await db.commit()
     return {"id": br.id, "label": br.label}
@@ -402,8 +392,7 @@ async def admin_delete_budget_range(record_id: str, db: AsyncSession = Depends(g
         raise HTTPException(status_code=404, detail="BudgetRange not found")
     br.deleted_at = func.now()
     br.is_active = False
-    br.updated_by = admin["id"]
-    await db.commit()
+    br.updated_by = str(admin.id)
     _log(db, "budget_ranges", br.id, "DELETE", old={"label": br.label})
     await db.commit()
     return {"detail": "BudgetRange deleted"}
@@ -446,10 +435,9 @@ async def admin_create_tech_recommendation(data: dict, db: AsyncSession = Depend
         priority=data.get("priority", 0),
         notes=data.get("notes"),
         is_active=data.get("is_active", True),
-        created_by=admin["id"],
+        created_by=str(admin.id),
     )
     db.add(tr)
-    await db.commit()
     await db.refresh(tr)
     _log(db, "technology_recommendations", tr.id, "CREATE",
          new={"project_type": tr.project_type, "technology": tr.technology})
@@ -467,8 +455,7 @@ async def admin_update_tech_recommendation(record_id: str, data: dict, db: Async
     for field in ("project_type", "category", "technology", "priority", "notes", "is_active"):
         if field in data:
             setattr(tr, field, data[field])
-    tr.updated_by = admin["id"]
-    await db.commit()
+    tr.updated_by = str(admin.id)
     _log(db, "technology_recommendations", tr.id, "UPDATE", old=old,
          new={"project_type": tr.project_type, "technology": tr.technology})
     await db.commit()
@@ -483,8 +470,7 @@ async def admin_delete_tech_recommendation(record_id: str, db: AsyncSession = De
         raise HTTPException(status_code=404, detail="TechnologyRecommendation not found")
     tr.deleted_at = func.now()
     tr.is_active = False
-    tr.updated_by = admin["id"]
-    await db.commit()
+    tr.updated_by = str(admin.id)
     _log(db, "technology_recommendations", tr.id, "DELETE",
          new={"project_type": tr.project_type, "technology": tr.technology})
     await db.commit()

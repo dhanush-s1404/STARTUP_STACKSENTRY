@@ -4,12 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from database.config import get_db
 from database.models import Service, ServiceCategory, ServiceComparison, AuditLog
+from api.deps import get_current_admin
 
 router = APIRouter(prefix="/api/admin/services", tags=["Admin Services"])
-
-
-async def get_current_admin():
-    return {"id": "admin", "name": "Administrator"}
 
 
 @router.get("")
@@ -104,7 +101,6 @@ async def admin_create_service(
         created_by=admin.get("id"),
     )
     db.add(service)
-    await db.commit()
     await db.refresh(service)
 
     log = AuditLog(
@@ -153,7 +149,6 @@ async def admin_update_service(
             setattr(service, json_field, json.dumps(data[json_field]))
 
     service.updated_by = admin.get("id")
-    await db.commit()
     await db.refresh(service)
 
     log = AuditLog(
@@ -184,7 +179,6 @@ async def admin_delete_service(
     service.deleted_at = func.now()
     service.is_active = False
     service.updated_by = admin.get("id")
-    await db.commit()
 
     log = AuditLog(
         table_name="services",

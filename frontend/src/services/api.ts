@@ -59,14 +59,25 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  const combinedSignal = signal
-    ? AbortSignal.any([signal, controller.signal])
-    : controller.signal;
+  let combinedSignal: AbortSignal;
+  if (signal && typeof AbortSignal.any === "function") {
+    combinedSignal = AbortSignal.any([signal, controller.signal]);
+  } else if (signal) {
+    const combined = new AbortController();
+    signal.addEventListener("abort", () => combined.abort(), { once: true });
+    controller.signal.addEventListener("abort", () => combined.abort(), { once: true });
+    combinedSignal = combined.signal;
+  } else {
+    combinedSignal = controller.signal;
+  }
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
   const config: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
     signal: combinedSignal,

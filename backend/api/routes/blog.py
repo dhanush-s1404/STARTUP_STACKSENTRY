@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, update
 from sqlalchemy.orm import joinedload
 from database.config import get_db
 from database.models import BlogPost, TeamMember
@@ -153,13 +154,14 @@ async def get_blog_post(slug: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Blog post not found")
 
     await db.execute(
-        BlogPost.__table__.update()
+        update(BlogPost)
         .where(BlogPost.id == post.id)
         .values(view_count=BlogPost.view_count + 1)
     )
     await db.commit()
 
     data = _serialize_post(post, full=True)
+    data["view_count"] = (post.view_count or 0) + 1
     return data
 
 

@@ -16,9 +16,7 @@ import { CTACinematic } from "@/components/sections/cta-cinematic";
 import { NewsletterSection } from "@/components/sections/newsletter-section";
 import { ContactSection } from "@/components/sections/contact-section";
 import { ScrollStorySection, StoryDivider } from "@/components/sections/scroll-story";
-import { StructuredData } from "@/components/shared/structured-data";
 import { ClientAnimatedBackground } from "@/components/shared/client-animated-background";
-import { generateOrganizationSchema, generateWebsiteSchema } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: {
@@ -31,8 +29,6 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <StructuredData data={generateOrganizationSchema()} />
-      <StructuredData data={generateWebsiteSchema()} />
       <ClientAnimatedBackground />
       <Navbar />
       <main className="flex-1">

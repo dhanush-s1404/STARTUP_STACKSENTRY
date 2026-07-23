@@ -73,13 +73,11 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <StructuredData data={generateOrganizationSchema()} />
-        <StructuredData data={generateWebsiteSchema()} />
-      </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <Providers>
+          <StructuredData data={generateOrganizationSchema()} />
+          <StructuredData data={generateWebsiteSchema()} />
           <ScrollProgress />
           <Suspense fallback={null}>
             <PageLoader />

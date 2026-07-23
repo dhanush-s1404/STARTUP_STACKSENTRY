@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { MotionDiv } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -165,13 +166,25 @@ const trustBadges = [
 
 export function HeroSection() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const glowRef = useRef<HTMLDivElement>(null);
+  const ticking = useRef(false);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: ((e.clientX - rect.left) / rect.width - 0.5) * 20,
-      y: ((e.clientY - rect.top) / rect.height - 0.5) * 20,
-    });
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
+
+    if (glowRef.current) {
+      glowRef.current.style.background = `radial-gradient(600px circle at ${50 + x * 0.5}% ${50 + y * 0.5}%, hsl(221 83% 53% / 0.15), transparent 50%)`;
+    }
+
+    if (!ticking.current) {
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        setMousePos({ x, y });
+        ticking.current = false;
+      });
+    }
   }, []);
 
   return (
@@ -187,10 +200,8 @@ export function HeroSection() {
 
       {/* Interactive glow that follows mouse */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-30 transition-all duration-700"
-        style={{
-          background: `radial-gradient(600px circle at ${50 + mousePos.x * 0.5}% ${50 + mousePos.y * 0.5}%, hsl(221 83% 53% / 0.15), transparent 50%)`,
-        }}
+        ref={glowRef}
+        className="pointer-events-none absolute inset-0 opacity-30"
         aria-hidden="true"
       />
 
@@ -261,12 +272,16 @@ export function HeroSection() {
           transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
-          <Button size="xl" icon={<ArrowRight className="h-5 w-5" />} iconPosition="right">
-            Start Your Project
-          </Button>
-          <Button variant="secondary" size="xl" icon={<Play className="h-4 w-4" />}>
-            Book Consultation
-          </Button>
+          <Link href="/consultation">
+            <Button size="xl" icon={<ArrowRight className="h-5 w-5" />} iconPosition="right">
+              Start Your Project
+            </Button>
+          </Link>
+          <Link href="/company/contact">
+            <Button variant="secondary" size="xl" icon={<Play className="h-4 w-4" />}>
+              Book Consultation
+            </Button>
+          </Link>
         </MotionDiv>
 
         <MotionDiv
@@ -275,12 +290,16 @@ export function HeroSection() {
           transition={{ delay: 0.75, duration: 0.6 }}
           className="mt-6 flex items-center justify-center gap-4"
         >
-          <Button variant="ghost" size="md">
-            Explore Portfolio
-          </Button>
-          <Button variant="ghost" size="md">
-            View Careers
-          </Button>
+          <Link href="/portfolio">
+            <Button variant="ghost" size="md">
+              Explore Portfolio
+            </Button>
+          </Link>
+          <Link href="/careers">
+            <Button variant="ghost" size="md">
+              View Careers
+            </Button>
+          </Link>
         </MotionDiv>
 
         {/* Tech chips */}

@@ -2,7 +2,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import DeclarativeBase
 from pydantic_settings import BaseSettings
 from pydantic import Field
+import logging
 import secrets
+
+logger = logging.getLogger("stacksentry.config")
 
 
 class Settings(BaseSettings):
@@ -53,6 +56,11 @@ if settings.is_production:
 
 if not settings.SECRET_KEY:
     settings.SECRET_KEY = secrets.token_urlsafe(64)
+    logger.warning(
+        "SECRET_KEY was not set — generated a random key for this session. "
+        "All tokens will be invalidated on restart. "
+        "Set SECRET_KEY in your .env file for persistent tokens."
+    )
 
 engine = create_async_engine(
     settings.DATABASE_URL,
